@@ -56,6 +56,7 @@ async def create_account(
     return new_account
 
 
+@router.get("/list", response_model=list[AccountResponse])
 async def list_accounts(
     request: Request,
     page: int = 1,
