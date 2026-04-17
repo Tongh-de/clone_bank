@@ -8,10 +8,18 @@ from datetime import datetime
 
 DASHSCOPE_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
 
-# 常用城市列表
-COMMON_CITIES = ["北京", "上海", "广州", "深圳", "杭州", "南京", "武汉", "成都", "重庆", "西安", 
-                 "天津", "苏州", "郑州", "长沙", "沈阳", "青岛", "宁波", "东莞", "无锡", "昆明",
-                 "大连", "厦门", "合肥", "佛山", "福州", "哈尔滨", "济南", "温州", "长春", "石家庄"]
+# 常用城市列表（中英文映射）
+CITY_PINGYIN = {
+    "北京": "Beijing", "上海": "Shanghai", "广州": "Guangzhou", "深圳": "Shenzhen",
+    "杭州": "Hangzhou", "南京": "Nanjing", "武汉": "Wuhan", "成都": "Chengdu",
+    "重庆": "Chongqing", "西安": "Xi'an", "天津": "Tianjin", "苏州": "Suzhou",
+    "郑州": "Zhengzhou", "长沙": "Changsha", "沈阳": "Shenyang", "青岛": "Qingdao",
+    "宁波": "Ningbo", "东莞": "Dongguan", "无锡": "Wuxi", "昆明": "Kunming",
+    "大连": "Dalian", "厦门": "Xiamen", "合肥": "Hefei", "佛山": "Foshan",
+    "福州": "Fuzhou", "哈尔滨": "Harbin", "济南": "Jinan", "温州": "Wenzhou",
+    "长春": "Changchun", "石家庄": "Shijiazhuang"
+}
+COMMON_CITIES = list(CITY_PINGYIN.keys())
 
 def get_current_time_info() -> str:
     """获取当前时间信息"""
@@ -38,8 +46,11 @@ def extract_city_from_message(message: str) -> str:
 async def get_weather(city: str = "北京") -> str:
     """获取天气信息（使用免费API）"""
     try:
-        # 使用wttr.in免费天气API
-        url = f"https://wttr.in/{city}?format=j1"
+        # 将中文城市名转换为拼音
+        city_pinyin = CITY_PINGYIN.get(city, city)
+        
+        # 使用wttr.in免费天气API（使用拼音）
+        url = f"https://wttr.in/{city_pinyin}?format=j1"
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(url)
             if response.status_code == 200:
@@ -50,7 +61,16 @@ async def get_weather(city: str = "北京") -> str:
                 humidity = current["humidity"]
                 wind = current["windspeedKmph"]
                 feels_like = current["FeelsLikeC"]
-                return f"{city}天气：{weather}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind}km/h"
+                # 天气描述中英对照
+                weather_map = {
+                    "Sunny": "晴天", "Clear": "晴朗", "Partly cloudy": "多云",
+                    "Cloudy": "阴天", "Overcast": "阴天", "Mist": "有雾",
+                    "Fog": "大雾", "Light rain": "小雨", "Heavy rain": "大雨",
+                    "Light snow": "小雪", "Heavy snow": "大雪", "Thunderstorm": "雷阵雨",
+                    "Light drizzle": "毛毛雨"
+                }
+                weather_cn = weather_map.get(weather, weather)
+                return f"{city}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind}km/h"
     except Exception as e:
         return f"天气查询暂时不可用"
     return "天气查询暂时不可用"
