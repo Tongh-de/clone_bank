@@ -89,14 +89,15 @@ class ChatMessage(BaseModel):
 
 
 class ReportRequest(BaseModel):
-    report_type: str  # daily, monthly, transaction_detail
+    report_type: str  # daily, monthly, account
+    format: Optional[str] = "pdf"  # pdf 或 excel
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     account_number: Optional[str] = None
 
 
 class ReportResponse(BaseModel):
-    report_type: str
-    generated_at: datetime
+    success: bool
+    message: str
     file_path: Optional[str] = None
-    content: Optional[dict] = None
+    report_type: Optional[str] = None
