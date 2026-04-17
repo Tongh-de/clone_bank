@@ -56,7 +56,6 @@ async def create_account(
     return new_account
 
 
-@router.get("/list", response_model=list[AccountResponse])
 async def list_accounts(
     request: Request,
     page: int = 1,
@@ -67,7 +66,7 @@ async def list_accounts(
     user = await require_login(request, db)
     
     query = db.query(Account).filter(Account.owner_id == user.id)
-    
+
     if status_filter:
         query = query.filter(Account.status == status_filter)
     
@@ -75,7 +74,7 @@ async def list_accounts(
     offset = (page - 1) * PAGE_SIZE
     
     accounts = query.offset(offset).limit(PAGE_SIZE).all()
-    
+
     return accounts
 
 
