@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}报表管理 - 银行账户管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="bi bi-file-earmark-bar-graph"></i> 报表管理</h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 生成报表 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-file-plus"></i> 生成报表
+            </div>
+            <div class="card-body">
+                <form id="reportForm">
+                    <div class="mb-3">
+                        <label class="form-label">报表类型</label>
+                        <select class="form-select" id="reportType" required onchange="toggleAccountField()">
+                            <option value="daily">日报</option>
+                            <option value="monthly">月报</option>
+                            <option value="account">账户明细</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="dateRangeFields">
+                        <label class="form-label">日期</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="startDate">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="endDate">
+                            </div>
+                        </div>
+                        <small class="text-muted">留空则使用当天</small>
+                    </div>
+                    
+                    <div class="mb-3" id="accountField" style="display: none;">
+                        <label class="form-label">选择账户</label>
+                        <select class="form-select" id="accountNumber">
+                            <option value="">加载中...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">导出格式</label>
+                        <select class="form-select" id="reportFormat">
+                            <option value="pdf">PDF</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-download"></i> 生成并下载报表
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 报表说明 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-question-circle"></i> 报表说明
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="reportAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#dailyInfo">
+                                日报
+                            </button>
+                        </h2>
+                        <div id="dailyInfo" class="accordion-collapse collapse show" data-bs-parent="#reportAccordion">
+                            <div class="accordion-body">
+                                包含指定日期的所有交易汇总，包括存款、取款、转账统计，以及详细交易列表。
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#monthlyInfo">
+                                月报
+                            </button>
+                        </h2>
+                        <div id="monthlyInfo" class="accordion-collapse collapse" data-bs-parent="#reportAccordion">
+                            <div class="accordion-body">
+                                包含指定月份的交易汇总，按日统计每日交易情况，方便了解资金流动趋势。
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accountInfo">
+                                账户明细
+                            </button>
+                        </h2>
+                        <div id="accountInfo" class="accordion-collapse collapse" data-bs-parent="#reportAccordion">
+                            <div class="accordion-body">
+                                针对单个账户的详细报表，包含账户信息和指定日期范围内的所有交易明细。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 历史报表 -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-clock-history"></i> 历史报表
+                <button class="btn btn-sm btn-light float-end" onclick="loadReports()">
+                    <i class="bi bi-arrow-clockwise"></i> 刷新
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>文件名</th>
+                                <th>大小</th>
+                                <th>生成时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTable">
+                            <tr><td colspan="4" class="text-center text-muted">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let accounts = [];
+
+async function loadAccounts() {
+    try {
+        accounts = await apiRequest('/api/accounts/list');
+        const options = accounts.map(acc => 
+            `<option value="${acc.account_number}">${acc.account_number} (¥${parseFloat(acc.balance).toFixed(2)})</option>`
+        ).join('');
+        document.getElementById('accountNumber').innerHTML = options || '<option value="">暂无账户</option>';
+    } catch (error) {
+        console.error('加载账户失败:', error);
+    }
+}
+
+function toggleAccountField() {
+    const reportType = document.getElementById('reportType').value;
+    const accountField = document.getElementById('accountField');
+    const dateRangeFields = document.getElementById('dateRangeFields');
+    
+    if (reportType === 'account') {
+        accountField.style.display = 'block';
+        dateRangeFields.style.display = 'block';
+    } else if (reportType === 'monthly') {
+        accountField.style.display = 'none';
+        dateRangeFields.style.display = 'block';
+    } else {
+        accountField.style.display = 'none';
+        dateRangeFields.style.display = 'block';
+    }
+}
+
+async function loadReports() {
+    try {
+        const reports = await apiRequest('/api/reports/list');
+        
+        if (reports.length === 0) {
+            document.getElementById('reportsTable').innerHTML = 
+                '<tr><td colspan="4" class="text-center text-muted">暂无报表</td></tr>';
+            return;
+        }
+        
+        const html = reports.map(r => `
+            <tr>
+                <td><i class="bi bi-file-earmark-${r.name.endsWith('.xlsx') ? 'excel' : 'pdf'}-fill text-success"></i> ${r.name}</td>
+                <td>${formatSize(r.size)}</td>
+                <td>${r.created}</td>
+                <td>
+                    <a href="/api/reports/download/${r.name}" class="btn btn-sm btn-primary" download>
+                        <i class="bi bi-download"></i> 下载
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+        
+        document.getElementById('reportsTable').innerHTML = html;
+    } catch (error) {
+        console.error('加载报表失败:', error);
+        document.getElementById('reportsTable').innerHTML = 
+            '<tr><td colspan="4" class="text-center text-muted">加载失败</td></tr>';
+    }
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+document.getElementById('reportForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const reportType = document.getElementById('reportType').value;
+    const reportFormat = document.getElementById('reportFormat').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const accountNumber = document.getElementById('accountNumber').value;
+    
+    try {
+        const data = {
+            report_type: reportType,
+            format: reportFormat,
+            start_date: startDate || null,
+            end_date: endDate || null,
+            account_number: reportType === 'account' ? accountNumber : null
+        };
+        
+        const result = await apiRequest('/api/reports/generate', 'POST', data);
+        
+        if (result.success && result.file_path) {
+            // 自动下载
+            const filename = result.file_path.split('/').pop();
+            window.location.href = `/api/reports/download/${filename}`;
+            showToast('报表生成成功!');
+            loadReports();
+        } else {
+            showToast(result.message, true);
+        }
+    } catch (error) {}
+});
+
+// 设置默认日期为今天
+document.getElementById('startDate').valueAsDate = new Date();
+document.getElementById('endDate').valueAsDate = new Date();
+
+loadAccounts();
+loadReports();
+</script>
+{% endblock %}
