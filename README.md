@@ -1,37 +1,43 @@
-# Bank_count_yang
+# Bank Account Management System
 
 #### 介绍
-一个专注于银行账户管理的开源项目，提供账户查询、交易记录分析等功能，助力开发者构建高效金融应用。
+一个专注于银行账户管理的开源项目，采用 FastAPI + MySQL 构建，提供账户管理、交易记录分析、报表导出等功能。
 
 #### 软件架构
-软件架构说明
+- **前端**：HTML + Bootstrap 5
+- **后端**：FastAPI (Python)
+- **数据库**：MySQL
+- **认证**：JWT Token
+- **架构模式**：MVC
 
+#### 功能模块
+- 用户登录认证
+- 账户管理（开户、销户、冻结）
+- 存款/取款/转账
+- 交易记录查询
+- 报表导出（PDF/Excel）
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1. 安装 Python 3.9+
+2. 安装 MySQL 8.0+
+3. 创建数据库：
+```sql
+CREATE DATABASE bank_db DEFAULT CHARSET utf8mb4;
+```
+4. 安装依赖：
+```bash
+pip install -r requirements.txt
+```
+5. 修改 `config.py` 中的数据库配置
+6. 运行项目：
+```bash
+uvicorn main:app --reload
+```
+7. 访问 http://localhost:8000
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 参与贡献
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+- 初始管理员账号：admin / admin123
+- 账户余额单位：元
+- 所有金额保留2位小数

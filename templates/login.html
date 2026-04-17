@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - 银行账户管理系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card mt-5">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="bi bi-bank2" style="font-size: 4rem; color: var(--primary-color);"></i>
+                    <h3 class="mt-3">欢迎登录</h3>
+                    <p class="text-muted">银行账户管理系统</p>
+                </div>
+                
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" required autofocus>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">密码</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="bi bi-box-arrow-in-right"></i> 登录
+                    </button>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <p class="text-muted">还没有账户? <a href="/register">立即注册</a></p>
+                </div>
+                
+                <hr>
+                <div class="text-center text-muted small">
+                    <p>测试账号: admin / admin123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        showLoading();
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.detail || '登录失败');
+        }
+        
+        showToast('登录成功!');
+        setTimeout(() => window.location.href = '/', 500);
+    } catch (error) {
+        showToast(error.message, true);
+    } finally {
+        hideLoading();
+    }
+});
+</script>
+{% endblock %}

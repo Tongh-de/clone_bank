@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}转账 - 银行账户管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="bi bi-arrow-left-right"></i> 转账汇款</h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 转账表单 -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-send"></i> 转账信息
+            </div>
+            <div class="card-body">
+                <form id="transferForm">
+                    <div class="mb-3">
+                        <label class="form-label">转出账户</label>
+                        <select class="form-select form-select-lg" id="fromAccount" required>
+                            <option value="">请选择转出账户</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">转入账户</label>
+                        <input type="text" class="form-control form-control-lg" id="toAccount" 
+                               placeholder="请输入转入账户号" required maxlength="16">
+                        <small class="text-muted">请仔细核对账户号，转账后无法撤回</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">转账金额</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">¥</span>
+                            <input type="number" class="form-control" id="amount" 
+                                   placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">备注 (可选)</label>
+                        <input type="text" class="form-control" id="description" 
+                               placeholder="添加备注..." maxlength="100">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-check-circle"></i> 确认转账
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 转账说明 -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-info-circle"></i> 转账须知
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <i class="bi bi-1-circle text-primary"></i>
+                        转账金额实时到账
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-2-circle text-primary"></i>
+                        请仔细核对转入账户信息
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-3-circle text-primary"></i>
+                        转账完成后无法撤回
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-4-circle text-primary"></i>
+                        如有疑问请联系客服
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 我的账户余额 -->
+        <div class="card mt-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-wallet2"></i> 我的账户余额
+            </div>
+            <div class="card-body" id="balanceList">
+                <div class="text-center text-muted">加载中...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadAccounts() {
+    try {
+        const accounts = await apiRequest('/api/accounts/list');
+        
+        // 过滤出正常的账户
+        const activeAccounts = accounts.filter(a => a.status === 'active');
+        
+        const options = activeAccounts.map(acc => 
+            `<option value="${acc.account_number}">${acc.account_number} (余额: ¥${parseFloat(acc.balance).toFixed(2)})</option>`
+        ).join('');
+        
+        document.getElementById('fromAccount').innerHTML = '<option value="">请选择转出账户</option>' + options;
+        
+        // 更新余额列表
+        const balanceHtml = activeAccounts.length === 0 
+            ? '<div class="text-muted">暂无账户</div>'
+            : activeAccounts.map(acc => `
+                <div class="d-flex justify-content-between mb-2">
+                    <span>${acc.account_number.slice(-4)}</span>
+                    <span class="fw-bold text-success">¥${parseFloat(acc.balance).toFixed(2)}</span>
+                </div>
+            `).join('');
+        document.getElementById('balanceList').innerHTML = balanceHtml;
+    } catch (error) {
+        console.error('加载账户失败:', error);
+    }
+}
+
+document.getElementById('transferForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const fromAccount = document.getElementById('fromAccount').value;
+    const toAccount = document.getElementById('toAccount').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const description = document.getElementById('description').value;
+    
+    if (fromAccount === toAccount) {
+        showToast('不能给自己转账', true);
+        return;
+    }
+    
+    if (amount <= 0) {
+        showToast('转账金额必须大于0', true);
+        return;
+    }
+    
+    try {
+        const result = await apiRequest('/api/transfer/', 'POST', {
+            from_account: fromAccount,
+            to_account: toAccount,
+            amount: amount,
+            description: description || null
+        });
+        
+        showToast(`转账成功!`);
+        
+        // 清空表单
+        document.getElementById('amount').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('toAccount').value = '';
+        
+        // 刷新余额
+        loadAccounts();
+    } catch (error) {}
+});
+
+loadAccounts();
+</script>
+{% endblock %}

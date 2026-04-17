@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 银行账户管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-house"></i> 欢迎回来, {{ user.full_name }}!</h2>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-4" id="statsRow">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="bi bi-wallet2"></i>
+            <div class="number" id="totalAccounts">-</div>
+            <div class="label">我的账户</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="bi bi-cash-stack"></i>
+            <div class="number" id="totalBalance">-</div>
+            <div class="label">总余额 (元)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="bi bi-arrow-down-circle"></i>
+            <div class="number" id="todayDeposit">-</div>
+            <div class="label">今日存款</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="bi bi-arrow-up-circle"></i>
+            <div class="number" id="todayWithdraw">-</div>
+            <div class="label">今日取款</div>
+        </div>
+    </div>
+</div>
+
+<!-- 快捷操作 -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-lightning"></i> 快捷操作
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-primary w-100 py-3" onclick="showCreateAccountModal()">
+                            <i class="bi bi-plus-circle fs-3"></i>
+                            <div>开户</div>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-success w-100 py-3" onclick="showDepositModal()">
+                            <i class="bi bi-arrow-down-circle fs-3"></i>
+                            <div>存款</div>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-warning w-100 py-3" onclick="showWithdrawModal()">
+                            <i class="bi bi-arrow-up-circle fs-3"></i>
+                            <div>取款</div>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/transfer" class="btn btn-outline-info w-100 py-3">
+                            <i class="bi bi-arrow-left-right fs-3"></i>
+                            <div>转账</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 最近交易 -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history"></i> 最近交易</span>
+                <a href="/reports" class="btn btn-sm btn-light">查看全部</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>账户</th>
+                            <th>类型</th>
+                            <th>金额</th>
+                            <th>余额</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentTransactions">
+                        <tr><td colspan="6" class="text-center text-muted">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 开户 Modal -->
+<div class="modal fade" id="createAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">开立新账户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createAccountForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">账户类型</label>
+                        <select class="form-select" id="account_type" name="account_type">
+                            <option value="savings">储蓄账户</option>
+                            <option value="checking">支票账户</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">确定开户</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 存款 Modal -->
+<div class="modal fade" id="depositModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">存款</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="depositForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">选择账户</label>
+                        <select class="form-select" id="deposit_account" name="account_number" required>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">存款金额</label>
+                        <input type="number" class="form-control" id="deposit_amount" name="amount" 
+                               step="0.01" min="0.01" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-success">确认存款</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 取款 Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">取款</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="withdrawForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">选择账户</label>
+                        <select class="form-select" id="withdraw_account" name="account_number" required>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">取款金额</label>
+                        <input type="number" class="form-control" id="withdraw_amount" name="amount" 
+                               step="0.01" min="0.01" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-warning">确认取款</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let accounts = [];
+
+async function loadData() {
+    try {
+        // 加载账户列表
+        const accountsRes = await apiRequest('/api/accounts/list');
+        accounts = accountsRes;
+        
+        // 更新统计
+        document.getElementById('totalAccounts').textContent = accounts.length;
+        const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
+        document.getElementById('totalBalance').textContent = '¥' + totalBalance.toFixed(2);
+        
+        // 更新账户选择框
+        updateAccountSelects();
+        
+        // 加载最近交易
+        loadRecentTransactions();
+    } catch (error) {
+        console.error('加载数据失败:', error);
+    }
+}
+
+async function loadRecentTransactions() {
+    let html = '';
+    let hasTransactions = false;
+    
+    for (const acc of accounts.slice(0, 3)) {
+        try {
+            const txns = await apiRequest(`/api/accounts/${acc.account_number}/transactions`);
+            if (txns && txns.length > 0) {
+                hasTransactions = true;
+                for (const txn of txns.slice(0, 2)) {
+                    const typeClass = txn.transaction_type === 'deposit' || txn.transaction_type === 'transfer_in' 
+                        ? 'text-success' : 'text-danger';
+                    const typeText = {
+                        'deposit': '存款',
+                        'withdraw': '取款',
+                        'transfer_in': '转入',
+                        'transfer_out': '转出'
+                    }[txn.transaction_type];
+                    
+                    const sign = txn.transaction_type === 'deposit' || txn.transaction_type === 'transfer_in' ? '+' : '-';
+                    
+                    html += `
+                        <tr>
+                            <td>${new Date(txn.created_at).toLocaleString()}</td>
+                            <td>${acc.account_number}</td>
+                            <td class="${typeClass}">${typeText}</td>
+                            <td class="${typeClass}">${sign}¥${parseFloat(txn.amount).toFixed(2)}</td>
+                            <td>¥${parseFloat(txn.balance_after).toFixed(2)}</td>
+                            <td>${txn.description || '-'}</td>
+                        </tr>
+                    `;
+                }
+            }
+        } catch (e) {}
+    }
+    
+    document.getElementById('recentTransactions').innerHTML = hasTransactions 
+        ? html 
+        : '<tr><td colspan="6" class="text-center text-muted">暂无交易记录</td></tr>';
+}
+
+function updateAccountSelects() {
+    const options = accounts.map(acc => 
+        `<option value="${acc.account_number}">${acc.account_number} (¥${parseFloat(acc.balance).toFixed(2)})</option>`
+    ).join('');
+    
+    document.getElementById('deposit_account').innerHTML = options;
+    document.getElementById('withdraw_account').innerHTML = options;
+}
+
+function showCreateAccountModal() {
+    new bootstrap.Modal(document.getElementById('createAccountModal')).show();
+}
+
+function showDepositModal() {
+    if (accounts.length === 0) {
+        showToast('请先创建账户', true);
+        return;
+    }
+    new bootstrap.Modal(document.getElementById('depositModal')).show();
+}
+
+function showWithdrawModal() {
+    if (accounts.length === 0) {
+        showToast('请先创建账户', true);
+        return;
+    }
+    new bootstrap.Modal(document.getElementById('withdrawModal')).show();
+}
+
+// 开户
+document.getElementById('createAccountForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const account_type = document.getElementById('account_type').value;
+    
+    try {
+        await apiRequest('/api/accounts/create', 'POST', { account_type });
+        showToast('开户成功!');
+        bootstrap.Modal.getInstance(document.getElementById('createAccountModal')).hide();
+        loadData();
+    } catch (error) {}
+});
+
+// 存款
+document.getElementById('depositForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const account_number = document.getElementById('deposit_account').value;
+    const amount = parseFloat(document.getElementById('deposit_amount').value);
+    
+    try {
+        const result = await apiRequest(`/api/accounts/${account_number}/deposit?amount=${amount}`, 'POST');
+        showToast(`存款成功! 余额: ¥${result.balance.toFixed(2)}`);
+        bootstrap.Modal.getInstance(document.getElementById('depositModal')).hide();
+        document.getElementById('deposit_amount').value = '';
+        loadData();
+    } catch (error) {}
+});
+
+// 取款
+document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const account_number = document.getElementById('withdraw_account').value;
+    const amount = parseFloat(document.getElementById('withdraw_amount').value);
+    
+    try {
+        const result = await apiRequest(`/api/accounts/${account_number}/withdraw?amount=${amount}`, 'POST');
+        showToast(`取款成功! 余额: ¥${result.balance.toFixed(2)}`);
+        bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
+        document.getElementById('withdraw_amount').value = '';
+        loadData();
+    } catch (error) {}
+});
+
+loadData();
+</script>
+{% endblock %}

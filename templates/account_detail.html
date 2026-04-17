@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}账户详情 - {{ account_number }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>
+            <a href="/accounts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+            账户详情
+        </h2>
+    </div>
+    <div class="col-md-4 text-end" id="actionButtons">
+        <!-- 动态填充 -->
+    </div>
+</div>
+
+<!-- 账户信息 -->
+<div class="card mb-4" id="accountInfo">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h4 class="text-primary">¥<span id="balance">-</span></h4>
+                <p class="text-muted">当前余额</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="badge badge-active fs-6" id="statusBadge">-</span>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-4">
+                <small class="text-muted">账户号</small>
+                <div class="fw-bold" id="accountNumber">-</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">账户类型</small>
+                <div class="fw-bold" id="accountType">-</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">开户时间</small>
+                <div class="fw-bold" id="createdAt">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 快速操作 -->
+<div class="row mb-4" id="quickActions">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-arrow-down-circle"></i> 存款
+            </div>
+            <div class="card-body">
+                <form id="depositForm" class="row g-3">
+                    <div class="col-8">
+                        <input type="number" class="form-control" id="depositAmount" 
+                               placeholder="金额" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="col-4">
+                        <button type="submit" class="btn btn-success w-100">存款</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-arrow-up-circle"></i> 取款
+            </div>
+            <div class="card-body">
+                <form id="withdrawForm" class="row g-3">
+                    <div class="col-8">
+                        <input type="number" class="form-control" id="withdrawAmount" 
+                               placeholder="金额" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="col-4">
+                        <button type="submit" class="btn btn-warning w-100">取款</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 交易记录 -->
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-ul"></i> 交易记录</span>
+        <a href="/reports" class="btn btn-sm btn-light">导出报表</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>类型</th>
+                        <th>金额</th>
+                        <th>余额</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionsTable">
+                    <tr><td colspan="5" class="text-center text-muted">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- 分页 -->
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const accountNumber = '{{ account_number }}';
+let currentPage = 1;
+let accountData = null;
+
+async function loadAccountInfo() {
+    try {
+        accountData = await apiRequest(`/api/accounts/${accountNumber}`);
+        
+        document.getElementById('balance').textContent = parseFloat(accountData.balance).toFixed(2);
+        document.getElementById('accountNumber').textContent = accountData.account_number;
+        document.getElementById('accountType').textContent = accountData.account_type === 'savings' ? '储蓄账户' : '支票账户';
+        document.getElementById('createdAt').textContent = new Date(accountData.created_at).toLocaleString();
+        
+        const statusBadge = document.getElementById('statusBadge');
+        const statusText = accountData.status === 'active' ? '正常' 
+            : accountData.status === 'frozen' ? '已冻结' : '已销户';
+        statusBadge.textContent = statusText;
+        statusBadge.className = accountData.status === 'active' ? 'badge badge-active fs-6'
+            : accountData.status === 'frozen' ? 'badge badge-frozen fs-6' : 'badge badge-closed fs-6';
+        
+        // 更新操作按钮
+        updateActionButtons();
+        
+        // 隐藏操作按钮如果账户已关闭
+        if (accountData.status === 'closed') {
+            document.getElementById('quickActions').style.display = 'none';
+        }
+    } catch (error) {
+        showToast('加载账户信息失败', true);
+    }
+}
+
+function updateActionButtons() {
+    let html = '';
+    if (accountData.status === 'active') {
+        html = `
+            <a href="/transfer" class="btn btn-primary">
+                <i class="bi bi-arrow-left-right"></i> 转账
+            </a>
+            <button class="btn btn-warning" onclick="freezeAccount()">
+                <i class="bi bi-snow2"></i> 冻结
+            </button>
+        `;
+    } else if (accountData.status === 'frozen') {
+        html = `
+            <button class="btn btn-success" onclick="unfreezeAccount()">
+                <i class="bi bi-sun"></i> 解冻
+            </button>
+        `;
+    }
+    document.getElementById('actionButtons').innerHTML = html;
+}
+
+async function loadTransactions() {
+    try {
+        const transactions = await apiRequest(`/api/accounts/${accountNumber}/transactions?page=${currentPage}`);
+        
+        let html = '';
+        if (transactions.length === 0) {
+            html = '<tr><td colspan="5" class="text-center text-muted">暂无交易记录</td></tr>';
+        } else {
+            transactions.forEach(txn => {
+                const isIncome = txn.transaction_type === 'deposit' || txn.transaction_type === 'transfer_in';
+                const typeClass = isIncome ? 'text-success' : 'text-danger';
+                const typeText = {
+                    'deposit': '存款',
+                    'withdraw': '取款',
+                    'transfer_in': '转入',
+                    'transfer_out': '转出'
+                }[txn.transaction_type];
+                const sign = isIncome ? '+' : '-';
+                
+                html += `
+                    <tr>
+                        <td>${new Date(txn.created_at).toLocaleString()}</td>
+                        <td class="${typeClass}">${typeText}</td>
+                        <td class="${typeClass} fw-bold">${sign}¥${parseFloat(txn.amount).toFixed(2)}</td>
+                        <td>¥${parseFloat(txn.balance_after).toFixed(2)}</td>
+                        <td>${txn.description || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        document.getElementById('transactionsTable').innerHTML = html;
+    } catch (error) {
+        console.error('加载交易记录失败:', error);
+    }
+}
+
+async function freezeAccount() {
+    if (!confirm('确定要冻结此账户吗?')) return;
+    try {
+        await apiRequest(`/api/accounts/${accountNumber}/freeze`, 'POST');
+        showToast('账户已冻结');
+        loadAccountInfo();
+    } catch (error) {}
+}
+
+async function unfreezeAccount() {
+    try {
+        await apiRequest(`/api/accounts/${accountNumber}/unfreeze`, 'POST');
+        showToast('账户已解冻');
+        loadAccountInfo();
+    } catch (error) {}
+}
+
+// 存款
+document.getElementById('depositForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(document.getElementById('depositAmount').value);
+    
+    try {
+        const result = await apiRequest(`/api/accounts/${accountNumber}/deposit?amount=${amount}`, 'POST');
+        showToast(`存款成功! 余额: ¥${result.balance.toFixed(2)}`);
+        document.getElementById('depositAmount').value = '';
+        loadAccountInfo();
+        loadTransactions();
+    } catch (error) {}
+});
+
+// 取款
+document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(document.getElementById('withdrawAmount').value);
+    
+    try {
+        const result = await apiRequest(`/api/accounts/${accountNumber}/withdraw?amount=${amount}`, 'POST');
+        showToast(`取款成功! 余额: ¥${result.balance.toFixed(2)}`);
+        document.getElementById('withdrawAmount').value = '';
+        loadAccountInfo();
+        loadTransactions();
+    } catch (error) {}
+});
+
+loadAccountInfo();
+loadTransactions();
+</script>
+{% endblock %}
