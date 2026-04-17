@@ -56,7 +56,7 @@ async def create_account(
     return new_account
 
 
-@router.get("/list", response_model=list[AccountListResponse])
+@router.get("/list", response_model=list[AccountResponse])
 async def list_accounts(
     request: Request,
     page: int = 1,
@@ -66,7 +66,7 @@ async def list_accounts(
     """获取账户列表"""
     user = await require_login(request, db)
     
-    query = db.query(Account, User.full_name).join(User).filter(Account.owner_id == user.id)
+    query = db.query(Account).filter(Account.owner_id == user.id)
     
     if status_filter:
         query = query.filter(Account.status == status_filter)
@@ -74,20 +74,9 @@ async def list_accounts(
     query = query.order_by(Account.created_at.desc())
     offset = (page - 1) * PAGE_SIZE
     
-    results = query.offset(offset).limit(PAGE_SIZE).all()
+    accounts = query.offset(offset).limit(PAGE_SIZE).all()
     
-    return [
-        AccountListResponse(
-            id=account.id,
-            account_number=account.account_number,
-            account_type=account.account_type,
-            balance=account.balance,
-            status=account.status,
-            owner_name=owner_name,
-            created_at=account.created_at
-        )
-        for account, owner_name in results
-    ]
+    return accounts
 
 
 @router.get("/{account_number}", response_model=AccountResponse)

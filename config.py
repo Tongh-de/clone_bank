@@ -20,3 +20,6 @@ PAGE_SIZE = 20
 
 # 报表配置
 REPORT_DIR = "reports"
+
+# 通义千问API配置（请替换为你的密钥）
+DASHSCOPE_API_KEY = "sk-3e4efec26397455fa5f4dbd7e25e3c83"

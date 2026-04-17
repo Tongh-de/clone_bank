@@ -1,35 +1,32 @@
 """
-Pydantic Schemas - 数据验证模型
+数据模型
 """
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
-from decimal import Decimal
 
 
-# ============ 用户相关 ============
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     username: str
+    password: str
     full_name: str
     email: Optional[str] = None
 
 
-class UserCreate(UserBase):
-    password: str
-
-
-class UserResponse(UserBase):
+class UserResponse(BaseModel):
     id: int
+    username: str
+    full_name: str
+    email: Optional[str]
     role: str
     is_active: bool
     created_at: datetime
-    last_login: Optional[datetime] = None
+    last_login: Optional[datetime]
 
     class Config:
         from_attributes = True
 
 
-# ============ 认证相关 ============
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -40,79 +37,66 @@ class Token(BaseModel):
     token_type: str
 
 
-class TokenData(BaseModel):
-    username: Optional[str] = None
-
-
-# ============ 账户相关 ============
 class AccountCreate(BaseModel):
     account_type: str = "savings"
+    initial_balance: float = 0.0
 
 
 class AccountResponse(BaseModel):
     id: int
     account_number: str
     account_type: str
-    balance: Decimal
+    balance: float
     status: str
     owner_id: int
     created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
 
 
 class AccountListResponse(BaseModel):
-    id: int
-    account_number: str
-    account_type: str
-    balance: Decimal
-    status: str
-    owner_name: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# ============ 交易相关 ============
-class TransactionRequest(BaseModel):
-    account_number: str
-    amount: Decimal
-
-
-class TransferRequest(BaseModel):
-    from_account: str
-    to_account: str
-    amount: Decimal
-    description: Optional[str] = None
+    accounts: List[AccountResponse]
+    total: int
 
 
 class TransactionResponse(BaseModel):
     id: int
     transaction_type: str
-    amount: Decimal
-    balance_before: Decimal
-    balance_after: Decimal
-    description: Optional[str] = None
+    amount: float
+    balance_before: float
+    balance_after: float
+    description: Optional[str]
     account_id: int
-    related_account_id: Optional[int] = None
+    related_account_id: Optional[int]
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 
-# ============ 报表相关 ============
+class TransferRequest(BaseModel):
+    from_account: str
+    to_account: str
+    amount: float
+    description: Optional[str] = None
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
 class ReportRequest(BaseModel):
-    report_type: str  # daily, monthly, account
+    report_type: str  # daily, monthly, transaction_detail
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     account_number: Optional[str] = None
-    format: str = "pdf"  # pdf, excel
 
 
 class ReportResponse(BaseModel):
-    success: bool
-    message: str
+    report_type: str
+    generated_at: datetime
     file_path: Optional[str] = None
+    content: Optional[dict] = None
