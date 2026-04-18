@@ -118,23 +118,5 @@ class AIChatResponse(BaseModel):
     error: Optional[str] = None
 
 
-# ============ AI 图片生成请求/响应 ============
-class ImageGenerateRequest(BaseModel):
-    prompt: str
-    model: Optional[str] = "wanx-v1"
-    size: Optional[str] = "1024*1024"
-
-
-class ImageGenerateResponse(BaseModel):
-    success: bool
-    prompt: str
-    model: str
-    image_url: Optional[str] = None
-    image_base64: Optional[str] = None
-    task_id: Optional[str] = None
-    error: Optional[str] = None
-
-
 class ModelListResponse(BaseModel):
     chat_models: dict
-    image_models: dict
