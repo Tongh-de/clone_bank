@@ -3,12 +3,12 @@
 """
 import httpx
 import re
-import config
 from datetime import datetime
+from core import config
 
 DASHSCOPE_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
 
-# 常用城市列表（中英文映射）
+# 城市映射
 CITY_PINGYIN = {
     "北京": "Beijing", "上海": "Shanghai", "广州": "Guangzhou", "深圳": "Shenzhen",
     "杭州": "Hangzhou", "南京": "Nanjing", "武汉": "Wuhan", "成都": "Chengdu",
@@ -21,6 +21,7 @@ CITY_PINGYIN = {
 }
 COMMON_CITIES = list(CITY_PINGYIN.keys())
 
+
 def get_current_time_info() -> str:
     """获取当前时间信息"""
     now = datetime.now()
@@ -31,25 +32,18 @@ def get_current_time_info() -> str:
 
 def extract_city_from_message(message: str) -> str:
     """从消息中提取城市名"""
-    # 检查是否包含"本地"、"当地"、"这里"等词
     if any(word in message for word in ["本地", "当地", "这里", "这边", "我现在在", "我在"]):
-        return "北京"  # 默认返回北京，可根据实际需求调整
-    
-    # 尝试匹配常见城市名
+        return "北京"
     for city in COMMON_CITIES:
         if city in message:
             return city
-    
     return None
 
 
 async def get_weather(city: str = "北京") -> str:
-    """获取天气信息（使用免费API）"""
+    """获取天气信息"""
     try:
-        # 将中文城市名转换为拼音
         city_pinyin = CITY_PINGYIN.get(city, city)
-        
-        # 使用wttr.in免费天气API（使用拼音）
         url = f"https://wttr.in/{city_pinyin}?format=j1"
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(url)
@@ -61,7 +55,6 @@ async def get_weather(city: str = "北京") -> str:
                 humidity = current["humidity"]
                 wind = current["windspeedKmph"]
                 feels_like = current["FeelsLikeC"]
-                # 天气描述中英对照
                 weather_map = {
                     "Sunny": "晴天", "Clear": "晴朗", "Partly cloudy": "多云",
                     "Cloudy": "阴天", "Overcast": "阴天", "Mist": "有雾",
@@ -71,28 +64,23 @@ async def get_weather(city: str = "北京") -> str:
                 }
                 weather_cn = weather_map.get(weather, weather)
                 return f"{city}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind}km/h"
-    except Exception as e:
-        return f"天气查询暂时不可用"
+    except Exception:
+        pass
     return "天气查询暂时不可用"
 
 
 def extract_location_keywords(message: str) -> bool:
-    """检查消息是否包含位置/地图相关关键词"""
-    location_keywords = [
-        "在哪里", "地址", "位置", "怎么走", "路线", "地图", "附近",
-        "距离", "离我", "导航", "找到", "搜索", "地点", "营业厅",
-        "支行", "分行", "网点", "位置在哪"
-    ]
-    return any(keyword in message for keyword in location_keywords)
+    """检查是否包含位置/地图相关关键词"""
+    keywords = ["在哪里", "地址", "位置", "怎么走", "路线", "地图", "附近",
+                "距离", "离我", "导航", "找到", "搜索", "地点", "营业厅", "支行", "分行", "网点"]
+    return any(keyword in message for keyword in keywords)
 
 
 def extract_address_from_message(message: str) -> str:
     """从消息中提取地址或位置关键词"""
-    # 移除常见前缀
     message = message.replace("你们", "").replace("银行", "").replace("网点", "")
     message = message.replace("营业厅", "").replace("支行", "").replace("分行", "")
     
-    # 提取地址关键词
     patterns = [
         r'.*?(?:在|到|去|找|搜索|查找)(.+?)(?:怎么|在哪|的位置|怎么走|多远)',
         r'(.+?)(?:支行|分行|营业厅|网点|支行|分行)',
@@ -103,14 +91,12 @@ def extract_address_from_message(message: str) -> str:
         match = re.search(pattern, message)
         if match:
             return match.group(1).strip()
-    
     return None
 
 
 async def search_location(keyword: str, region: str = None) -> str:
-    """搜索位置信息（使用 Nominatim 免费的 OpenStreetMap 服务）"""
+    """搜索位置信息"""
     try:
-        # 使用 Nominatim (OpenStreetMap) 免费API
         search_keyword = keyword if region is None else f"{keyword}, {region}"
         url = "https://nominatim.openstreetmap.org/search"
         params = {
@@ -127,13 +113,8 @@ async def search_location(keyword: str, region: str = None) -> str:
             if response.status_code == 200:
                 results = response.json()
                 if results:
-                    # 返回最佳匹配结果
                     top_result = results[0]
                     display_name = top_result.get("display_name", "")
-                    lat = top_result.get("lat", "")
-                    lon = top_result.get("lon", "")
-                    
-                    # 提取简短地址
                     address = top_result.get("address", {})
                     short_addr = address.get("city", address.get("town", address.get("village", "")))
                     
@@ -141,12 +122,12 @@ async def search_location(keyword: str, region: str = None) -> str:
                         "name": keyword,
                         "address": display_name,
                         "short_address": short_addr,
-                        "latitude": lat,
-                        "longitude": lon,
+                        "latitude": top_result.get("lat", ""),
+                        "longitude": top_result.get("lon", ""),
                         "type": top_result.get("type", "")
                     }
         return None
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -175,16 +156,13 @@ async def get_nearby_bank_info(keyword: str, region: str = None) -> str:
                         city = address.get("city", address.get("town", address.get("village", "未知")))
                         road = address.get("road", "")
                         suburb = address.get("suburb", "")
-                        
                         full_addr = ", ".join(filter(None, [road, suburb, city]))
                         lat = r.get("lat", "")
                         lon = r.get("lon", "")
-                        
                         locations.append(f"{i}. {city} {full_addr} (坐标: {lat}, {lon})")
-                    
                     return "\n".join(locations)
         return "附近银行网点信息暂时无法获取"
-    except Exception as e:
+    except Exception:
         return "附近银行网点信息暂时无法获取"
 
 
@@ -195,15 +173,12 @@ async def chat_with_qwen(messages: list) -> str:
         "Content-Type": "application/json"
     }
     
-    # 获取当前时间
     time_info = get_current_time_info()
-    
-    # 获取用户消息
     user_message = messages[-1]["content"] if messages else ""
     
-    # ============ 天气查询 ============
-    weather_keywords = ["天气", "气温", "温度", "下雨", "下雪", "晴", "阴", "冷", "热"]
+    # 天气查询
     weather_info = ""
+    weather_keywords = ["天气", "气温", "温度", "下雨", "下雪", "晴", "阴", "冷", "热"]
     if any(keyword in user_message for keyword in weather_keywords):
         city = extract_city_from_message(user_message)
         if city:
@@ -211,22 +186,17 @@ async def chat_with_qwen(messages: list) -> str:
     if not weather_info:
         weather_info = await get_weather("北京")
     
-    # ============ 地图位置查询 ============
+    # 地图位置查询
     location_info = ""
     if extract_location_keywords(user_message):
-        # 提取搜索关键词
         search_keyword = extract_address_from_message(user_message)
         if search_keyword:
-            # 确定搜索区域
             region = extract_city_from_message(user_message) or "中国"
-            
-            # 检查是否是搜索银行
             if any(word in user_message for word in ["银行", "网点", "营业厅", "支行", "分行"]):
                 location_info = await get_nearby_bank_info(search_keyword, region)
                 if location_info:
                     location_info = f"\n\n📍 {region}附近的银行网点：\n{location_info}"
             else:
-                # 搜索普通地点
                 location_result = await search_location(search_keyword, region)
                 if location_result:
                     location_info = f"""

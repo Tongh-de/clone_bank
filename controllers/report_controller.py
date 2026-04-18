@@ -4,22 +4,20 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.parser import parse
 import os
 import uuid
-from database import get_db
+from core.database import get_db
 from models.account import Account, Transaction
 from models.user import User
 from schemas import ReportRequest, ReportResponse
-from auth import require_login
-from config import REPORT_DIR, BANK_NAME
+from core.auth import require_login
+from core import config
 
 router = APIRouter(prefix="/api/reports", tags=["报表"])
 
-# 确保报表目录存在
-os.makedirs(REPORT_DIR, exist_ok=True)
+os.makedirs(config.REPORT_DIR, exist_ok=True)
 
 
 @router.post("/generate", response_model=ReportResponse)
@@ -63,7 +61,6 @@ def generate_daily_report(db: Session, user: User, report_data: ReportRequest) -
     date_str = report_data.start_date or datetime.now().strftime("%Y-%m-%d")
     report_date = parse(date_str).date()
     
-    # 查询当日交易
     start_datetime = datetime.combine(report_date, datetime.min.time())
     end_datetime = datetime.combine(report_date, datetime.max.time())
     
@@ -75,22 +72,19 @@ def generate_daily_report(db: Session, user: User, report_data: ReportRequest) -
     
     transactions = query.all()
     
-    # 生成PDF
     file_name = f"daily_report_{report_date}_{uuid.uuid4().hex[:8]}.pdf"
-    file_path = os.path.join(REPORT_DIR, file_name)
+    file_path = os.path.join(config.REPORT_DIR, file_name)
     
     doc = SimpleDocTemplate(file_path, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()
     
-    # 标题
-    elements.append(Paragraph(f"{BANK_NAME} 日报", styles['Title']))
+    elements.append(Paragraph(f"{config.BANK_NAME} 日报", styles['Title']))
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"报表日期: {report_date}", styles['Normal']))
     elements.append(Paragraph(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
-    # 统计
     total_deposit = sum(float(t.amount) for t in transactions if t.transaction_type == "deposit")
     total_withdraw = sum(float(t.amount) for t in transactions if t.transaction_type == "withdraw")
     total_transfer_in = sum(float(t.amount) for t in transactions if t.transaction_type == "transfer_in")
@@ -103,16 +97,10 @@ def generate_daily_report(db: Session, user: User, report_data: ReportRequest) -
     elements.append(Paragraph(f"转出总额: ¥{total_transfer_out:,.2f}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
-    # 交易明细表
     if transactions:
         data = [["时间", "类型", "金额", "余额", "描述"]]
+        type_map = {"deposit": "存款", "withdraw": "取款", "transfer_in": "转入", "transfer_out": "转出"}
         for t in transactions:
-            type_map = {
-                "deposit": "存款",
-                "withdraw": "取款",
-                "transfer_in": "转入",
-                "transfer_out": "转出"
-            }
             data.append([
                 t.created_at.strftime("%H:%M:%S"),
                 type_map.get(t.transaction_type, t.transaction_type),
@@ -148,7 +136,6 @@ def generate_monthly_report(db: Session, user: User, report_data: ReportRequest)
     date_str = report_data.start_date or datetime.now().strftime("%Y-%m")
     report_month = parse(date_str).date().replace(day=1)
     
-    # 查询当月交易
     start_datetime = datetime.combine(report_month, datetime.min.time())
     if report_month.month == 12:
         end_datetime = datetime.combine(report_month.replace(year=report_month.year + 1, month=1), datetime.min.time())
@@ -163,7 +150,6 @@ def generate_monthly_report(db: Session, user: User, report_data: ReportRequest)
     
     transactions = query.all()
     
-    # 按日统计
     daily_stats = {}
     for t in transactions:
         day = t.created_at.date()
@@ -179,22 +165,19 @@ def generate_monthly_report(db: Session, user: User, report_data: ReportRequest)
         elif t.transaction_type == "transfer_out":
             daily_stats[day]["transfer_out"] += float(t.amount)
     
-    # 生成PDF
     file_name = f"monthly_report_{report_month}_{uuid.uuid4().hex[:8]}.pdf"
-    file_path = os.path.join(REPORT_DIR, file_name)
+    file_path = os.path.join(config.REPORT_DIR, file_name)
     
     doc = SimpleDocTemplate(file_path, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()
     
-    # 标题
-    elements.append(Paragraph(f"{BANK_NAME} 月报", styles['Title']))
+    elements.append(Paragraph(f"{config.BANK_NAME} 月报", styles['Title']))
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"报表月份: {report_month.strftime('%Y-%m')}", styles['Normal']))
     elements.append(Paragraph(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
-    # 月度汇总
     total_deposit = sum(float(t.amount) for t in transactions if t.transaction_type == "deposit")
     total_withdraw = sum(float(t.amount) for t in transactions if t.transaction_type == "withdraw")
     
@@ -203,7 +186,6 @@ def generate_monthly_report(db: Session, user: User, report_data: ReportRequest)
     elements.append(Paragraph(f"取款总额: ¥{total_withdraw:,.2f}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
-    # 日报表
     if daily_stats:
         data = [["日期", "笔数", "存款", "取款", "转入", "转出"]]
         for day in sorted(daily_stats.keys()):
@@ -261,7 +243,6 @@ def generate_account_pdf(db: Session, user: User, report_data: ReportRequest) ->
     if not account:
         raise ValueError("账户不存在")
     
-    # 查询日期范围
     start_date = datetime.combine(parse(report_data.start_date).date(), datetime.min.time()) if report_data.start_date else datetime(2000, 1, 1)
     end_date = datetime.combine(parse(report_data.end_date).date(), datetime.max.time()) if report_data.end_date else datetime.now()
     
@@ -271,16 +252,14 @@ def generate_account_pdf(db: Session, user: User, report_data: ReportRequest) ->
         Transaction.created_at <= end_date
     ).order_by(Transaction.created_at.desc()).limit(100).all()
     
-    # 生成PDF
     file_name = f"account_report_{account_number}_{uuid.uuid4().hex[:8]}.pdf"
-    file_path = os.path.join(REPORT_DIR, file_name)
+    file_path = os.path.join(config.REPORT_DIR, file_name)
     
     doc = SimpleDocTemplate(file_path, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()
     
-    # 标题
-    elements.append(Paragraph(f"{BANK_NAME} 账户报表", styles['Title']))
+    elements.append(Paragraph(f"{config.BANK_NAME} 账户报表", styles['Title']))
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"账户号: {account_number}", styles['Normal']))
     elements.append(Paragraph(f"账户类型: {'储蓄账户' if account.account_type == 'savings' else '支票账户'}", styles['Normal']))
@@ -289,16 +268,10 @@ def generate_account_pdf(db: Session, user: User, report_data: ReportRequest) ->
     elements.append(Paragraph(f"报表时间: {start_date.strftime('%Y-%m-%d')} 至 {end_date.strftime('%Y-%m-%d')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
-    # 交易明细
     if transactions:
         data = [["时间", "类型", "金额", "余额", "描述"]]
+        type_map = {"deposit": "存款", "withdraw": "取款", "transfer_in": "转入", "transfer_out": "转出"}
         for t in transactions:
-            type_map = {
-                "deposit": "存款",
-                "withdraw": "取款",
-                "transfer_in": "转入",
-                "transfer_out": "转出"
-            }
             data.append([
                 t.created_at.strftime("%Y-%m-%d %H:%M"),
                 type_map.get(t.transaction_type, t.transaction_type),
@@ -343,7 +316,6 @@ def generate_account_excel(db: Session, user: User, report_data: ReportRequest) 
     if not account:
         raise ValueError("账户不存在")
     
-    # 查询日期范围
     start_date = datetime.combine(parse(report_data.start_date).date(), datetime.min.time()) if report_data.start_date else datetime(2000, 1, 1)
     end_date = datetime.combine(parse(report_data.end_date).date(), datetime.max.time()) if report_data.end_date else datetime.now()
     
@@ -353,12 +325,10 @@ def generate_account_excel(db: Session, user: User, report_data: ReportRequest) 
         Transaction.created_at <= end_date
     ).order_by(Transaction.created_at.desc()).limit(100).all()
     
-    # 创建Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "交易记录"
     
-    # 样式
     header_font = Font(bold=True)
     thin_border = Border(
         left=Side(style='thin'),
@@ -367,7 +337,6 @@ def generate_account_excel(db: Session, user: User, report_data: ReportRequest) 
         bottom=Side(style='thin')
     )
     
-    # 表头
     headers = ["时间", "类型", "金额", "余额", "描述"]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
@@ -375,13 +344,7 @@ def generate_account_excel(db: Session, user: User, report_data: ReportRequest) 
         cell.border = thin_border
         cell.alignment = Alignment(horizontal='center')
     
-    # 数据
-    type_map = {
-        "deposit": "存款",
-        "withdraw": "取款",
-        "transfer_in": "转入",
-        "transfer_out": "转出"
-    }
+    type_map = {"deposit": "存款", "withdraw": "取款", "transfer_in": "转入", "transfer_out": "转出"}
     
     for row, t in enumerate(transactions, 2):
         ws.cell(row=row, column=1, value=t.created_at.strftime("%Y-%m-%d %H:%M")).border = thin_border
@@ -390,9 +353,8 @@ def generate_account_excel(db: Session, user: User, report_data: ReportRequest) 
         ws.cell(row=row, column=4, value=float(t.balance_after)).border = thin_border
         ws.cell(row=row, column=5, value=t.description or "-").border = thin_border
     
-    # 保存
     file_name = f"account_report_{account_number}_{uuid.uuid4().hex[:8]}.xlsx"
-    file_path = os.path.join(REPORT_DIR, file_name)
+    file_path = os.path.join(config.REPORT_DIR, file_name)
     wb.save(file_path)
     
     return file_path
@@ -407,7 +369,7 @@ async def download_report(
     """下载报表"""
     user = await require_login(request, db)
     
-    file_path = os.path.join(REPORT_DIR, filename)
+    file_path = os.path.join(config.REPORT_DIR, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="文件不存在")
     
@@ -427,8 +389,8 @@ async def list_reports(
     user = await require_login(request, db)
     
     files = []
-    for f in os.listdir(REPORT_DIR):
-        file_path = os.path.join(REPORT_DIR, f)
+    for f in os.listdir(config.REPORT_DIR):
+        file_path = os.path.join(config.REPORT_DIR, f)
         if os.path.isfile(file_path):
             stat = os.stat(file_path)
             files.append({

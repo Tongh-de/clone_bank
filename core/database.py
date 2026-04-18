@@ -4,10 +4,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import config
+from core.config import DATABASE_URL
 
 engine = create_engine(
-    config.DATABASE_URL,
+    DATABASE_URL,
     pool_pre_ping=True,
     pool_recycle=3600,
     echo=False

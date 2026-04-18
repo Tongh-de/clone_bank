@@ -4,10 +4,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from decimal import Decimal
-from database import get_db
+from core.database import get_db
 from models.account import Account, Transaction
 from schemas import TransferRequest
-from auth import require_login
+from core.auth import require_login
+from core.logger import log_transaction, log_user_action
 
 router = APIRouter(prefix="/api/transfer", tags=["转账"])
 
@@ -21,11 +22,9 @@ async def transfer(
     """转账"""
     user = await require_login(request, db)
     
-    # 检查金额
     if transfer_data.amount <= 0:
         raise HTTPException(status_code=400, detail="转账金额必须大于0")
     
-    # 获取转出账户
     from_account = db.query(Account).filter(
         Account.account_number == transfer_data.from_account,
         Account.owner_id == user.id
@@ -37,7 +36,6 @@ async def transfer(
     if from_account.status != "active":
         raise HTTPException(status_code=400, detail="转出账户状态异常")
     
-    # 获取转入账户
     to_account = db.query(Account).filter(
         Account.account_number == transfer_data.to_account
     ).first()
@@ -51,11 +49,9 @@ async def transfer(
     if from_account.id == to_account.id:
         raise HTTPException(status_code=400, detail="不能给自己转账")
     
-    # 检查余额
     if from_account.balance < Decimal(str(transfer_data.amount)):
         raise HTTPException(status_code=400, detail="余额不足")
     
-    # 执行转账
     amount = Decimal(str(transfer_data.amount))
     from_balance_before = from_account.balance
     to_balance_before = to_account.balance
@@ -63,7 +59,6 @@ async def transfer(
     from_account.balance -= amount
     to_account.balance += amount
     
-    # 记录转出交易
     from_transaction = Transaction(
         transaction_type="transfer_out",
         amount=amount,
@@ -75,7 +70,6 @@ async def transfer(
     )
     db.add(from_transaction)
     
-    # 记录转入交易
     to_transaction = Transaction(
         transaction_type="transfer_in",
         amount=amount,
@@ -88,6 +82,12 @@ async def transfer(
     db.add(to_transaction)
     
     db.commit()
+    
+    log_transaction(transfer_data.from_account, "转出", float(amount), float(from_account.balance), f"至 {transfer_data.to_account}")
+    log_transaction(transfer_data.to_account, "转入", float(amount), float(to_account.balance), f"来自 {transfer_data.from_account}")
+    log_user_action(user.username, "转账", 
+                   f"从 {transfer_data.from_account} 至 {transfer_data.to_account}, 金额: ¥{float(amount)}",
+                   request.client.host if request.client else "")
     
     return {
         "message": "转账成功",

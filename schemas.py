@@ -1,5 +1,5 @@
 """
-数据模型
+数据验证模式
 """
 from pydantic import BaseModel
 from typing import Optional, List
@@ -89,8 +89,8 @@ class ChatMessage(BaseModel):
 
 
 class ReportRequest(BaseModel):
-    report_type: str  # daily, monthly, account
-    format: Optional[str] = "pdf"  # pdf 或 excel
+    report_type: str
+    format: Optional[str] = "pdf"
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     account_number: Optional[str] = None
@@ -101,3 +101,40 @@ class ReportResponse(BaseModel):
     message: str
     file_path: Optional[str] = None
     report_type: Optional[str] = None
+
+
+# ============ AI 对话请求/响应 ============
+class AIChatRequest(BaseModel):
+    messages: List[dict]
+    model: Optional[str] = "qwen-plus"
+    method: Optional[str] = "auto"
+
+
+class AIChatResponse(BaseModel):
+    success: bool
+    response: str
+    model: str
+    method: str
+    error: Optional[str] = None
+
+
+# ============ AI 图片生成请求/响应 ============
+class ImageGenerateRequest(BaseModel):
+    prompt: str
+    model: Optional[str] = "wanx-v1"
+    size: Optional[str] = "1024*1024"
+
+
+class ImageGenerateResponse(BaseModel):
+    success: bool
+    prompt: str
+    model: str
+    image_url: Optional[str] = None
+    image_base64: Optional[str] = None
+    task_id: Optional[str] = None
+    error: Optional[str] = None
+
+
+class ModelListResponse(BaseModel):
+    chat_models: dict
+    image_models: dict

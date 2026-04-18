@@ -6,10 +6,10 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status, Request
-from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from database import get_db
-import config
+from core.database import get_db
+from core.logger import log_user_action, log_error
+from core import config
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

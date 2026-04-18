@@ -1,24 +1,29 @@
 """
 银行账户管理系统 - 主入口
-使用 FastAPI + MySQL 构建
+MVC架构 - FastAPI + MySQL
 """
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from database import engine, Base, get_db
+from core.database import engine, Base, get_db
 from models.user import User
 from models.account import Account, Transaction
-from auth import get_current_user, get_password_hash
-import config
+from core.auth import get_current_user, get_password_hash
+from core.logger import app_logger
+from core import config
 
 # 创建表
 Base.metadata.create_all(bind=engine)
 
+app_logger.info("=" * 50)
+app_logger.info("银行账户管理系统启动")
+app_logger.info("=" * 50)
+
 app = FastAPI(
     title="银行账户管理系统",
-    description="一个专注于银行账户管理的开源项目",
+    description="MVC架构的银行账户管理开源项目",
     version="1.0.0"
 )
 
@@ -125,12 +130,11 @@ def init_admin():
             )
             db.add(admin)
             db.commit()
-            print("✓ 管理员账户已创建: admin / admin123")
+            print("管理员账户已创建: admin / admin123")
         else:
-            # 更新现有admin的密码哈希
             admin.password_hash = get_password_hash("admin123")
             db.commit()
-            print("✓ 管理员密码已更新: admin / admin123")
+            print("管理员密码已更新: admin / admin123")
     except Exception as e:
         print(f"初始化管理员失败: {e}")
     finally:
@@ -140,14 +144,13 @@ def init_admin():
 if __name__ == "__main__":
     import uvicorn
     
-    # 初始化
     init_admin()
     
-    print(f"\n🏦 {config.BANK_NAME} 账户管理系统")
-    print("=" * 40)
-    print("📍 访问地址: http://localhost:8000")
-    print("📖 API文档: http://localhost:8000/docs")
-    print("👤 默认账号: admin / admin123")
-    print("=" * 40)
+    app_logger.info(f"银行 {config.BANK_NAME} 账户管理系统")
+    app_logger.info("=" * 50)
+    app_logger.info(f"访问地址: http://localhost:8000")
+    app_logger.info(f"API文档: http://localhost:8000/docs")
+    app_logger.info(f"默认账号: admin / admin123")
+    app_logger.info("=" * 50)
     
     uvicorn.run(app, host="127.0.0.1", port=8000)

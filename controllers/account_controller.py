@@ -3,17 +3,17 @@
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from datetime import datetime
 from decimal import Decimal
 import random
 import string
-from database import get_db
+from core.database import get_db
 from models.user import User
 from models.account import Account, Transaction
-from schemas import AccountCreate, AccountResponse, AccountListResponse, TransactionResponse
-from auth import require_login
-from config import PAGE_SIZE
+from schemas import AccountCreate, AccountResponse, TransactionResponse
+from core.auth import require_login
+from core.logger import log_transaction, log_error, log_user_action
+from core import config
 
 router = APIRouter(prefix="/api/accounts", tags=["账户管理"])
 
@@ -34,14 +34,12 @@ async def create_account(
     """创建账户"""
     user = await require_login(request, db)
     
-    # 生成唯一账户号
     while True:
         account_number = generate_account_number()
         existing = db.query(Account).filter(Account.account_number == account_number).first()
         if not existing:
             break
     
-    # 创建账户
     new_account = Account(
         account_number=account_number,
         account_type=account_data.account_type,
@@ -67,15 +65,13 @@ async def list_accounts(
     user = await require_login(request, db)
     
     query = db.query(Account).filter(Account.owner_id == user.id)
-
     if status_filter:
         query = query.filter(Account.status == status_filter)
     
     query = query.order_by(Account.created_at.desc())
-    offset = (page - 1) * PAGE_SIZE
+    offset = (page - 1) * config.PAGE_SIZE
     
-    accounts = query.offset(offset).limit(PAGE_SIZE).all()
-
+    accounts = query.offset(offset).limit(config.PAGE_SIZE).all()
     return accounts
 
 
@@ -205,7 +201,6 @@ async def deposit(
     account.balance += Decimal(str(amount))
     balance_after = account.balance
     
-    # 记录交易
     transaction = Transaction(
         transaction_type="deposit",
         amount=Decimal(str(amount)),
@@ -216,6 +211,9 @@ async def deposit(
     )
     db.add(transaction)
     db.commit()
+    
+    log_transaction(account_number, "存款", amount, float(balance_after), "成功")
+    log_user_action(user.username, "存款", f"账户: {account_number}, 金额: ¥{amount}", request.client.host if request.client else "")
     
     return {
         "message": "存款成功",
@@ -255,7 +253,6 @@ async def withdraw(
     account.balance -= Decimal(str(amount))
     balance_after = account.balance
     
-    # 记录交易
     transaction = Transaction(
         transaction_type="withdraw",
         amount=Decimal(str(amount)),
@@ -266,6 +263,9 @@ async def withdraw(
     )
     db.add(transaction)
     db.commit()
+    
+    log_transaction(account_number, "取款", amount, float(balance_after), "成功")
+    log_user_action(user.username, "取款", f"账户: {account_number}, 金额: ¥{amount}", request.client.host if request.client else "")
     
     return {
         "message": "取款成功",
@@ -295,7 +295,7 @@ async def get_transactions(
     query = db.query(Transaction).filter(Transaction.account_id == account.id)
     query = query.order_by(Transaction.created_at.desc())
     
-    offset = (page - 1) * PAGE_SIZE
-    transactions = query.offset(offset).limit(PAGE_SIZE).all()
+    offset = (page - 1) * config.PAGE_SIZE
+    transactions = query.offset(offset).limit(config.PAGE_SIZE).all()
     
     return transactions
