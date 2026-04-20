@@ -360,3 +360,19 @@
 2026-04-20 20:00:32 - bank_user - INFO - [lisi] 退出登录 [IP: 127.0.0.1] - 
 2026-04-20 20:00:34 - bank_user - INFO - [Tonghui] 登录成功 [IP: 127.0.0.1] - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb
 2026-04-20 20:00:34 - bank_app - INFO - 用户登录: Tonghui from 127.0.0.1
+2026-04-20 20:14:46 - bank_app - INFO - ==================================================
+2026-04-20 20:14:46 - bank_app - INFO - 银行账户管理系统启动
+2026-04-20 20:14:46 - bank_app - INFO - ==================================================
+2026-04-20 20:14:46 - bank_app - INFO - 银行 演示银行 账户管理系统
+2026-04-20 20:14:46 - bank_app - INFO - ==================================================
+2026-04-20 20:14:46 - bank_app - INFO - 访问地址: http://localhost:8000
+2026-04-20 20:14:46 - bank_app - INFO - API文档: http://localhost:8000/docs
+2026-04-20 20:14:46 - bank_app - INFO - 默认账号: admin / admin123
+2026-04-20 20:14:46 - bank_app - INFO - ==================================================
+2026-04-20 20:15:04 - bank_user - INFO - [Tonghui] 退出登录 [IP: 127.0.0.1] - 
+2026-04-20 20:15:15 - bank_user - INFO - [admin] 登录失败-密码错误 [IP: 127.0.0.1] - 
+2026-04-20 20:15:28 - bank_user - INFO - [admin] 登录成功 [IP: 127.0.0.1] - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb
+2026-04-20 20:15:28 - bank_app - INFO - 用户登录: admin from 127.0.0.1
+2026-04-20 20:19:43 - bank_user - INFO - [admin] 退出登录 [IP: 127.0.0.1] - 
+2026-04-20 20:19:50 - bank_user - INFO - [Tonghui] 登录成功 [IP: 127.0.0.1] - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb
+2026-04-20 20:19:50 - bank_app - INFO - 用户登录: Tonghui from 127.0.0.1
