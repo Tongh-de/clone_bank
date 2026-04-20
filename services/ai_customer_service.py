@@ -8,7 +8,11 @@ from core import config
 
 DASHSCOPE_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
 
-# 城市映射 (wttr.in 支持的城市)
+# OpenWeatherMap API (免费版，支持全球任意城市/县级)
+OWM_API_KEY = "4d8fb5b93d4af21d66e4d2061f0e60e0"  # 免费API Key
+OWM_API_URL = "https://api.openweathermap.org/data/2.5/weather"
+
+# 城市映射 (wttr.in 支持的城市，作为备选)
 CITY_PINGYIN = {
     "北京": "Beijing", "上海": "Shanghai", "广州": "Guangzhou", "深圳": "Shenzhen",
     "杭州": "Hangzhou", "南京": "Nanjing", "武汉": "Wuhan", "成都": "Chengdu",
@@ -33,9 +37,24 @@ def get_current_time_info() -> str:
 
 
 def extract_city_from_message(message: str) -> str:
-    """从消息中提取城市名"""
-    if any(word in message for word in ["本地", "当地", "这里", "这边", "我现在在", "我在"]):
-        return "北京"
+    """从消息中提取城市名（支持县级）"""
+    # 移除常见前缀
+    msg = message
+    for prefix in ["我在", "我在", "本地", "当地", "这里", "这边"]:
+        msg = msg.replace(prefix, "")
+    
+    # 匹配省/市/县等行政区划
+    patterns = [
+        r'([^\s]+?(?:省|市|区|县|旗))',  # 匹配如"江苏省"、"南京市"、"浦东新区"、"某某县"
+        r'([^\s]+?(?:省|市|区|县|旗))[^\s]*',  # 更宽松匹配
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, msg)
+        if match:
+            return match.group(1).strip()
+    
+    # 回退：检查已知城市列表
     for city in COMMON_CITIES:
         if city in message:
             return city
@@ -43,10 +62,68 @@ def extract_city_from_message(message: str) -> str:
 
 
 async def get_weather(city: str = "北京") -> str:
-    """获取天气信息"""
+    """获取天气信息（支持县级城市）"""
+    # 优先使用 OpenWeatherMap（支持全球任意城市）
+    weather = await get_weather_openweathermap(city)
+    if weather:
+        return weather
+    
+    # 备选：使用 wttr.in
+    weather = await get_weather_wttr(city)
+    if weather:
+        return weather
+    
+    return None
+
+
+async def get_weather_openweathermap(city: str) -> str:
+    """使用 OpenWeatherMap 获取天气（支持县级城市）"""
+    try:
+        params = {
+            "q": f"{city},CN",  # 优先搜索中国
+            "appid": OWM_API_KEY,
+            "lang": "zh_cn",
+            "units": "metric"  # 使用摄氏度
+        }
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(OWM_API_URL, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                weather = data.get("weather", [{}])[0].get("description", "")
+                temp = data["main"]["temp"]
+                feels_like = data["main"]["feels_like"]
+                humidity = data["main"]["humidity"]
+                wind_speed = data["wind"]["speed"]
+                city_name = data.get("name", city)
+                
+                # 天气描述首字母大写转小写
+                weather_cn = weather.lower()
+                
+                return f"{city_name}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind_speed}m/s"
+            elif response.status_code == 404:
+                # 城市不存在，尝试只搜索城市名（不加中国）
+                params["q"] = city
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    response = await client.get(OWM_API_URL, params=params)
+                    if response.status_code == 200:
+                        data = response.json()
+                        weather = data.get("weather", [{}])[0].get("description", "")
+                        temp = data["main"]["temp"]
+                        feels_like = data["main"]["feels_like"]
+                        humidity = data["main"]["humidity"]
+                        wind_speed = data["wind"]["speed"]
+                        city_name = data.get("name", city)
+                        weather_cn = weather.lower()
+                        return f"{city_name}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind_speed}m/s"
+    except Exception as e:
+        print(f"OpenWeatherMap错误: {e}")
+    return None
+
+
+async def get_weather_wttr(city: str = "北京") -> str:
+    """使用 wttr.in 获取天气（备选方案）"""
     try:
         city_pinyin = CITY_PINGYIN.get(city, city)
-        # wttr.in 使用 /{城市名}?format=j1 格式
         url = f"https://wttr.in/{city_pinyin}?format=j1"
         headers = {"User-Agent": "Mozilla/5.0"}
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -70,8 +147,8 @@ async def get_weather(city: str = "北京") -> str:
                     weather_cn = weather_map.get(weather, weather)
                     return f"{city}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind}km/h"
     except Exception as e:
-        print(f"天气API错误: {e}")
-    return None  # 返回None让调用方决定是否使用默认值
+        print(f"wttr.in错误: {e}")
+    return None
 
 
 def extract_location_keywords(message: str) -> bool:
