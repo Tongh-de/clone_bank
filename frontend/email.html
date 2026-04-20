@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}发送邮件 - 银行账户管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="bi bi-robot"></i> AI智能邮件</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <!-- AI生成区域 -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-magic"></i> 一键生成邮件内容
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">邮件用途</label>
+                        <select class="form-select" id="emailPurpose" required>
+                            <option value="">请选择邮件类型</option>
+                            <option value="账户余额通知">账户余额通知</option>
+                            <option value="理财产品推荐">理财产品推荐</option>
+                            <option value="风险评估提醒">风险评估提醒</option>
+                            <option value="交易明细通知">交易明细通知</option>
+                            <option value="信用卡账单提醒">信用卡账单提醒</option>
+                            <option value="贷款审批通知">贷款审批通知</option>
+                            <option value="定期存款到期提醒">定期存款到期提醒</option>
+                            <option value="利率调整通知">利率调整通知</option>
+                            <option value="安全提醒">安全提醒</option>
+                            <option value="节日问候">节日问候</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">客户姓名（可选）</label>
+                        <input type="text" class="form-control" id="customerName" placeholder="如：张三">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">附加说明（可选）</label>
+                    <input type="text" class="form-control" id="extraInfo" placeholder="如：推荐高收益理财产品，期限6个月">
+                </div>
+                <button type="button" class="btn btn-success btn-lg" id="generateBtn" onclick="generateEmail()">
+                    <i class="bi bi-magic"></i> 生成邮件
+                </button>
+            </div>
+            <div id="generateLoading" class="card-footer text-center" style="display: none;">
+                <div class="spinner-border text-success" role="status"></div>
+                <span class="ms-2">AI正在生成邮件内容...</span>
+            </div>
+        </div>
+
+        <!-- 邮件编辑与发送 -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-send"></i> 编辑并发送
+            </div>
+            <div class="card-body">
+                <form id="emailForm">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">收件人邮箱</label>
+                            <input type="email" class="form-control" id="toEmail" required placeholder="例如：2980333637@qq.com">
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="clearAll()">
+                                <i class="bi bi-arrow-counterclockwise"></i> 清空全部
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">邮件主题</label>
+                        <input type="text" class="form-control" id="subject" placeholder="AI生成或手动输入">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">邮件内容</label>
+                        <textarea class="form-control" id="content" rows="10" placeholder="AI生成的内容可在此修改..."></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send"></i> 发送邮件
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-info-circle"></i> 使用说明
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    <li>选择邮件用途，填写客户信息（可选）</li>
+                    <li>点击"生成邮件"，AI将自动创建专业内容</li>
+                    <li>生成后可手动修改主题和内容</li>
+                    <li>填写收件人邮箱后发送</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('emailForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const toEmail = document.getElementById('toEmail').value.trim();
+    const subject = document.getElementById('subject').value.trim() || '来自银行系统的邮件';
+    const content = document.getElementById('content').value.trim();
+
+    if (!content) {
+        showToast('请先生成邮件内容', true);
+        return;
+    }
+
+    try {
+        const result = await apiRequest('/api/email/send', 'POST', {
+            to_email: toEmail,
+            subject: subject,
+            content: content
+        });
+        showToast('邮件发送成功！');
+    } catch (error) {
+        // 错误已在 apiRequest 中处理
+    }
+});
+
+function clearAll() {
+    document.getElementById('toEmail').value = '';
+    document.getElementById('subject').value = '';
+    document.getElementById('content').value = '';
+    document.getElementById('emailPurpose').value = '';
+    document.getElementById('customerName').value = '';
+    document.getElementById('extraInfo').value = '';
+}
+
+// AI生成邮件
+async function generateEmail() {
+    const purpose = document.getElementById('emailPurpose').value;
+    const customerName = document.getElementById('customerName').value.trim();
+    const extraInfo = document.getElementById('extraInfo').value.trim();
+
+    if (!purpose) {
+        showToast('请选择邮件用途', true);
+        return;
+    }
+
+    const generateBtn = document.getElementById('generateBtn');
+    const loadingDiv = document.getElementById('generateLoading');
+
+    generateBtn.disabled = true;
+    loadingDiv.style.display = 'block';
+
+    try {
+        const result = await apiRequest('/api/email/generate', 'POST', {
+            purpose: purpose,
+            customer_name: customerName || "",
+            extra_info: extraInfo || ""
+        });
+
+        if (result.data) {
+            document.getElementById('subject').value = result.data.subject || '';
+            document.getElementById('content').value = result.data.content || '';
+            showToast('邮件内容生成成功！可修改后再发送');
+        }
+    } catch (error) {
+        // 错误已在 apiRequest 中处理
+    } finally {
+        generateBtn.disabled = false;
+        loadingDiv.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
