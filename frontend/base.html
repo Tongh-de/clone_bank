@@ -68,10 +68,16 @@
                             <i class="bi bi-robot"></i> AI客服
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/email">
+                            <i class="bi bi-envelope"></i> 发邮件
+                        </a>
+                    </li>
                     {% if user %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ user.username }}
+                            <img id="userAvatar" src="" alt="头像" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 6px; vertical-align: middle;">
+                            <span id="userNameDisplay">{{ user.username }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><span class="dropdown-item-text">
@@ -139,6 +145,21 @@
             await fetch('/api/auth/logout', { method: 'POST' });
             window.location.href = '/login';
         }
+
+        // 生成用户头像
+        function generateAvatar(username) {
+            const seed = encodeURIComponent(username);
+            // 使用 DiceBear Adventurer 风格头像
+            return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+        }
+
+        // 页面加载时设置头像
+        document.addEventListener('DOMContentLoaded', function() {
+            const username = document.getElementById('userNameDisplay')?.textContent;
+            if (username) {
+                document.getElementById('userAvatar').src = generateAvatar(username);
+            }
+        });
 
         // API请求封装
         async function apiRequest(url, method = 'GET', data = null) {

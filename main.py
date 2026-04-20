@@ -37,12 +37,14 @@ from controllers.account_controller import router as account_router
 from controllers.transfer_controller import router as transfer_router
 from controllers.report_controller import router as report_router
 from controllers.ai_controller import router as ai_router
+from controllers.email_controller import router as email_router
 
 app.include_router(auth_router)
 app.include_router(account_router)
 app.include_router(transfer_router)
 app.include_router(report_router)
 app.include_router(ai_router)
+app.include_router(email_router)
 
 
 # ============ 页面路由 ============
@@ -111,6 +113,15 @@ async def ai_chat_page(request: Request, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse(url="/login", status_code=302)
     return templates.TemplateResponse("ai_chat.html", {"request": request, "user": user})
+
+
+@app.get("/email", response_class=HTMLResponse)
+async def email_page(request: Request, db: Session = Depends(get_db)):
+    """发送邮件页"""
+    user = await get_current_user(request, db)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    return templates.TemplateResponse("email.html", {"request": request, "user": user})
 
 
 # ============ 初始化管理员 ============

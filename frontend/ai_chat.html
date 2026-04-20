@@ -89,6 +89,7 @@
     justify-content: center;
     font-size: 1.1rem;
     flex-shrink: 0;
+    object-fit: cover;
 }
 
 .message-content {
@@ -152,6 +153,12 @@
 let conversationHistory = [];
 const userName = document.getElementById('currentUserName').textContent || '用户';
 
+// 生成用户头像
+function generateAvatar(username) {
+    const seed = encodeURIComponent(username);
+    return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+}
+
 function getWelcomeMessage() {
     return `您好，${userName}！我是银行AI智能客服小银，请问有什么可以帮助您的吗？`;
 }
@@ -165,9 +172,7 @@ function addMessage(role, content) {
     
     if (role === 'user') {
         messageDiv.innerHTML = `
-            <div class="user-avatar">
-                <i class="bi bi-person-fill"></i>
-            </div>
+            <img class="user-avatar" src="${generateAvatar(userName)}" alt="头像">
             <div class="message-content" style="align-items: flex-end;">
                 <div class="message-header">我 · ${time}</div>
                 <div class="user-bubble">${escapeHtml(content)}</div>

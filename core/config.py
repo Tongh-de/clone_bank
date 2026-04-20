@@ -23,3 +23,12 @@ REPORT_DIR = "reports"
 
 # 通义千问API配置
 DASHSCOPE_API_KEY = "sk-3e4efec26397455fa5f4dbd7e25e3c83"
+
+# 邮件配置
+EMAIL_HOST = "smtp.163.com"
+EMAIL_USER = "Huibb130@163.com"
+EMAIL_PASS = "YXgdqwENbHA3WhnX"
+EMAIL_PORT = 25
+
+# Ollama AI配置
+OLLAMA_MODEL = "qwen:0.5b"
