@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 银行账户管理系统{% endblock %}
+
+{% block content %}
+<!-- 欢迎标题 -->
+<div class="row mb-4">
+    <div class="col">
+        <h2 style="font-weight: 700; color: var(--text-primary);">
+            <i class="bi bi-house-door"></i> 
+            欢迎回来, {{ user.full_name }}
+        </h2>
+        <p class="text-muted">
+            <i class="bi bi-calendar3"></i> <span id="currentDate"></span>
+        </p>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-4" id="statsRow">
+    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+        <div class="stat-card accounts">
+            <div class="icon-wrapper">
+                <i class="bi bi-credit-card-2-front"></i>
+            </div>
+            <div class="number" id="totalAccounts">-</div>
+            <div class="label">我的账户</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+        <div class="stat-card balance">
+            <div class="icon-wrapper">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="number" id="totalBalance">-</div>
+            <div class="label">总资产 (CNY)</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+        <div class="stat-card deposit">
+            <div class="icon-wrapper">
+                <i class="bi bi-arrow-down-circle"></i>
+            </div>
+            <div class="number" id="todayDeposit">-</div>
+            <div class="label">今日存款</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card withdraw">
+            <div class="icon-wrapper">
+                <i class="bi bi-arrow-up-circle"></i>
+            </div>
+            <div class="number" id="todayWithdraw">-</div>
+            <div class="label">今日取款</div>
+        </div>
+    </div>
+</div>
+
+<!-- 快捷操作 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning-charge me-2"></i> 快捷操作
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="quick-btn" onclick="showCreateAccountModal(); return false;">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>开户</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="quick-btn deposit" onclick="showDepositModal(); return false;">
+                            <i class="bi bi-arrow-down-circle"></i>
+                            <span>存款</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="quick-btn withdraw" onclick="showWithdrawModal(); return false;">
+                            <i class="bi bi-arrow-up-circle"></i>
+                            <span>取款</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="/transfer" class="quick-btn transfer">
+                            <i class="bi bi-arrow-left-right"></i>
+                            <span>转账</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 最近交易 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history me-2"></i> 最近交易记录</span>
+                <a href="/reports" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-right"></i> 查看全部
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>账户</th>
+                                <th>类型</th>
+                                <th>金额</th>
+                                <th>余额</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentTransactions">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-hourglass-split" style="font-size: 1.5rem;"></i><br>
+                                    加载中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 开户 Modal -->
+<div class="modal fade" id="createAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>开立新账户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createAccountForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">账户类型</label>
+                        <select class="form-select" id="account_type" name="account_type">
+                            <option value="savings">储蓄账户</option>
+                            <option value="checking">支票账户</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">确认开户</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 存款 Modal -->
+<div class="modal fade" id="depositModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="color: var(--success);">
+                    <i class="bi bi-arrow-down-circle me-2"></i>存款
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="depositForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">选择账户</label>
+                        <select class="form-select" id="deposit_account" name="account_number" required>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">存款金额</label>
+                        <div class="input-group">
+                            <span class="input-group-text">¥</span>
+                            <input type="number" class="form-control" id="deposit_amount" name="amount" 
+                                   step="0.01" min="0.01" required placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg"></i> 确认存款
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 取款 Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="color: var(--accent-end);">
+                    <i class="bi bi-arrow-up-circle me-2"></i>取款
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="withdrawForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">选择账户</label>
+                        <select class="form-select" id="withdraw_account" name="account_number" required>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">取款金额</label>
+                        <div class="input-group">
+                            <span class="input-group-text">¥</span>
+                            <input type="number" class="form-control" id="withdraw_amount" name="amount" 
+                                   step="0.01" min="0.01" required placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-check-lg"></i> 确认取款
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let accounts = [];
+
+async function loadData() {
+    try {
+        const accountsRes = await apiRequest('/api/accounts/list');
+        accounts = accountsRes.data.items || [];
+        
+        document.getElementById('totalAccounts').textContent = accounts.length;
+        const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
+        document.getElementById('totalBalance').textContent = '¥' + totalBalance.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+        
+        // 加载今日统计
+        try {
+            const statsRes = await apiRequest('/api/accounts/stats/today');
+            const stats = statsRes.data || {};
+            document.getElementById('todayDeposit').textContent = '¥' + (stats.today_deposit || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2});
+            document.getElementById('todayWithdraw').textContent = '¥' + (stats.today_withdraw || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2});
+        } catch (e) {
+            document.getElementById('todayDeposit').textContent = '¥0.00';
+            document.getElementById('todayWithdraw').textContent = '¥0.00';
+        }
+        
+        updateAccountSelects();
+        loadRecentTransactions();
+    } catch (error) {
+        console.error('加载数据失败:', error);
+    }
+}
+
+async function loadRecentTransactions() {
+    let html = '';
+    let hasTransactions = false;
+    
+    for (const acc of accounts.slice(0, 3)) {
+        try {
+            const txns = await apiRequest(`/api/accounts/${acc.account_number}/transactions`);
+            const txnList = txns.data?.items || txns.data || [];
+            if (txnList && txnList.length > 0) {
+                hasTransactions = true;
+                for (const txn of txnList.slice(0, 2)) {
+                    const isPositive = txn.transaction_type === 'deposit' || txn.transaction_type === 'transfer_in';
+                    const typeClass = isPositive ? 'badge-deposit' : 'badge-withdraw';
+                    const amountClass = isPositive ? 'amount-positive' : 'amount-negative';
+                    const typeText = {
+                        'deposit': '存款',
+                        'withdraw': '取款',
+                        'transfer_in': '转入',
+                        'transfer_out': '转出'
+                    }[txn.transaction_type];
+                    
+                    const sign = isPositive ? '+' : '-';
+                    
+                    html += `
+                        <tr>
+                            <td><small class="text-muted">${new Date(txn.created_at).toLocaleString('zh-CN')}</small></td>
+                            <td><code>${acc.account_number}</code></td>
+                            <td><span class="badge ${typeClass}">${typeText}</span></td>
+                            <td class="${amountClass}">${sign}¥${parseFloat(txn.amount).toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                            <td>¥${parseFloat(txn.balance_after).toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                            <td><small>${txn.description || '-'}</small></td>
+                        </tr>
+                    `;
+                }
+            }
+        } catch (e) {}
+    }
+    
+    document.getElementById('recentTransactions').innerHTML = hasTransactions 
+        ? html 
+        : '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size: 2rem;"></i><br>暂无交易记录</td></tr>';
+}
+
+function updateAccountSelects() {
+    const options = accounts.map(acc => 
+        `<option value="${acc.account_number}">${acc.account_number} (¥${parseFloat(acc.balance).toLocaleString('zh-CN', {minimumFractionDigits: 2})})</option>`
+    ).join('');
+    
+    document.getElementById('deposit_account').innerHTML = options;
+    document.getElementById('withdraw_account').innerHTML = options;
+}
+
+function showCreateAccountModal() {
+    new bootstrap.Modal(document.getElementById('createAccountModal')).show();
+}
+
+function showDepositModal() {
+    if (accounts.length === 0) {
+        showToast('请先创建账户', true);
+        return;
+    }
+    new bootstrap.Modal(document.getElementById('depositModal')).show();
+}
+
+function showWithdrawModal() {
+    if (accounts.length === 0) {
+        showToast('请先创建账户', true);
+        return;
+    }
+    new bootstrap.Modal(document.getElementById('withdrawModal')).show();
+}
+
+// 开户
+document.getElementById('createAccountForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const account_type = document.getElementById('account_type').value;
+    
+    try {
+        await apiRequest('/api/accounts/create', 'POST', { account_type });
+        showToast('账户创建成功!');
+        bootstrap.Modal.getInstance(document.getElementById('createAccountModal')).hide();
+        loadData();
+    } catch (error) {}
+});
+
+// 存款
+document.getElementById('depositForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const account_number = document.getElementById('deposit_account').value;
+    const amount = parseFloat(document.getElementById('deposit_amount').value);
+    
+    try {
+        const result = await apiRequest(`/api/accounts/${account_number}/deposit?amount=${amount}`, 'POST');
+        const data = result.data || result;
+        showToast(`存款成功! 余额: ¥${data.balance.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`);
+        bootstrap.Modal.getInstance(document.getElementById('depositModal')).hide();
+        document.getElementById('deposit_amount').value = '';
+        loadData();
+    } catch (error) {}
+});
+
+// 取款
+document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const account_number = document.getElementById('withdraw_account').value;
+    const amount = parseFloat(document.getElementById('withdraw_amount').value);
+    
+    try {
+        const result = await apiRequest(`/api/accounts/${account_number}/withdraw?amount=${amount}`, 'POST');
+        const data = result.data || result;
+        showToast(`取款成功! 余额: ¥${data.balance.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`);
+        bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
+        document.getElementById('withdraw_amount').value = '';
+        loadData();
+    } catch (error) {}
+});
+
+loadData();
+
+// 显示今日日期
+const today = new Date();
+const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+document.getElementById('currentDate').textContent = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日 ${weekDays[today.getDay()]}`;
+</script>
+{% endblock %}

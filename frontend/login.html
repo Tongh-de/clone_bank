@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - 银行账户管理系统{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="icon-wrapper">
+            <i class="bi bi-bank2"></i>
+        </div>
+        
+        <h3>欢迎回来</h3>
+        <p class="subtitle">登录到银行账户管理系统</p>
+        
+        <form id="loginForm">
+            <div class="mb-3">
+                <label class="form-label">用户名</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text" class="form-control" id="username" name="username" required autofocus placeholder="请输入用户名">
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label">密码</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="password" name="password" required placeholder="请输入密码">
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-2">
+                <i class="bi bi-box-arrow-in-right"></i> 登录
+            </button>
+        </form>
+        
+        <div class="form-footer">
+            <p>还没有账户? <a href="/register">立即注册</a></p>
+        </div>
+        
+        <div class="test-info">
+            <p><i class="bi bi-info-circle me-1"></i> 测试账号</p>
+            <p><code>admin / admin123</code></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        showLoading();
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || data.detail || '登录失败');
+        }
+        
+        showToast(data.message || '登录成功!');
+        setTimeout(() => window.location.href = '/', 500);
+    } catch (error) {
+        showToast(error.message, true);
+    } finally {
+        hideLoading();
+    }
+});
+</script>
+{% endblock %}

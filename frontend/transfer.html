@@ -100,7 +100,8 @@
 <script>
 async function loadAccounts() {
     try {
-        const accounts = await apiRequest('/api/accounts/list');
+        const res = await apiRequest('/api/accounts/list');
+        const accounts = res.data?.items || res.data || [];
         
         // 过滤出正常的账户
         const activeAccounts = accounts.filter(a => a.status === 'active');

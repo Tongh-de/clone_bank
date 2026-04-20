@@ -2,8 +2,73 @@
 数据验证模式
 """
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any, Generic, TypeVar
 from datetime import datetime
+
+
+# ============ 统一响应模型 ============
+T = TypeVar('T')
+
+class ResponseModel(BaseModel, Generic[T]):
+    """统一响应格式"""
+    code: int = 200
+    message: str = "success"
+    data: Optional[T] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class PageResult(BaseModel, Generic[T]):
+    """分页响应"""
+    items: List[T]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+# ============ 统一响应工具 ============
+class ApiResponse:
+    """响应生成器"""
+    
+    @staticmethod
+    def success(data: Any = None, message: str = "操作成功") -> dict:
+        return {
+            "code": 200,
+            "message": message,
+            "data": data
+        }
+    
+    @staticmethod
+    def created(data: Any = None, message: str = "创建成功") -> dict:
+        return {
+            "code": 201,
+            "message": message,
+            "data": data
+        }
+    
+    @staticmethod
+    def error(message: str = "操作失败", code: int = 400) -> dict:
+        return {
+            "code": code,
+            "message": message,
+            "data": None
+        }
+    
+    @staticmethod
+    def page(items: List, total: int, page: int, page_size: int) -> dict:
+        return {
+            "code": 200,
+            "message": "查询成功",
+            "data": {
+                "items": items,
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": (total + page_size - 1) // page_size if page_size > 0 else 0
+            }
+        }
 
 
 class UserCreate(BaseModel):
@@ -119,4 +184,4 @@ class AIChatResponse(BaseModel):
 
 
 class ModelListResponse(BaseModel):
-    chat_models: dict
+    chat_models: Optional[dict] = None

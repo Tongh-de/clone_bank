@@ -4,103 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}银行账户管理系统{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #1a5f7a;
-            --secondary-color: #159895;
-            --accent-color: #57c5b6;
-            --light-bg: #f8f9fa;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--light-bg);
-            min-height: 100vh;
-        }
-        .navbar {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .navbar-brand {
-            font-weight: 600;
-            font-size: 1.3rem;
-        }
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border: none;
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
-        }
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-        .stat-card i {
-            font-size: 2.5rem;
-            color: var(--secondary-color);
-            margin-bottom: 10px;
-        }
-        .stat-card .number {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #333;
-        }
-        .stat-card .label {
-            color: #666;
-            font-size: 0.9rem;
-        }
-        .table {
-            background: white;
-            border-radius: 8px;
-        }
-        .badge-active { background-color: #198754; }
-        .badge-frozen { background-color: #ffc107; color: #000; }
-        .badge-closed { background-color: #dc3545; }
-        .toast {
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            z-index: 1050;
-        }
-        .loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255,255,255,0.8);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-        }
-    </style>
+    
+    <!-- 自定义样式 -->
+    <link href="/static/css/style.css" rel="stylesheet">
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Loading -->
     <div class="loading" id="loading">
-        <div class="spinner-border text-primary" role="status">
+        <div class="spinner-border" role="status">
             <span class="visually-hidden">加载中...</span>
         </div>
     </div>
 
     <!-- Toast -->
     <div class="toast" id="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
+        <div class="toast-header" id="toast-header">
+            <i class="bi bi-check-circle me-2"></i>
             <strong class="me-auto">提示</strong>
             <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
         </div>
@@ -108,10 +38,10 @@
     </div>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="bi bi-bank2"></i> 银行账户管理
+                <i class="bi bi-bank2"></i> 银行账户管理系统
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -120,7 +50,7 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="/accounts">
-                            <i class="bi bi-wallet2"></i> 我的账户
+                            <i class="bi bi-credit-card-2-front"></i> 我的账户
                         </a>
                     </li>
                     <li class="nav-item">
@@ -144,9 +74,13 @@
                             <i class="bi bi-person-circle"></i> {{ user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><span class="dropdown-item-text">角色: {{ user.role }}</span></li>
+                            <li><span class="dropdown-item-text">
+                                <i class="bi bi-shield-check me-2"></i>角色: {{ user.role }}
+                            </span></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="logout()">退出登录</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">
+                                <i class="bi bi-box-arrow-right"></i> 退出登录
+                            </a></li>
                         </ul>
                     </li>
                     {% else %}
@@ -167,8 +101,12 @@
     </main>
 
     <!-- Footer -->
-    <footer class="text-center py-4 text-muted">
-        <small>&copy; 2026 银行账户管理系统. All rights reserved.</small>
+    <footer class="text-center">
+        <div class="container">
+            <small class="text-muted">
+                银行账户管理系统 v2.0
+            </small>
+        </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -177,9 +115,17 @@
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             const toastBody = document.getElementById('toast-body');
+            const toastHeader = document.getElementById('toast-header');
             toastBody.textContent = message;
-            toast.querySelector('.toast-header').classList.toggle('bg-danger', isError);
-            toast.querySelector('.toast-header').classList.toggle('text-white', isError);
+            
+            if (isError) {
+                toastHeader.classList.add('bg-danger');
+                toastHeader.innerHTML = '<i class="bi bi-x-circle me-2"></i><strong class="me-auto">错误</strong><button type="button" class="btn-close" data-bs-dismiss="toast"></button>';
+            } else {
+                toastHeader.classList.remove('bg-danger');
+                toastHeader.innerHTML = '<i class="bi bi-check-circle me-2"></i><strong class="me-auto">成功</strong><button type="button" class="btn-close" data-bs-dismiss="toast"></button>';
+            }
+            
             const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
             bsToast.show();
         }

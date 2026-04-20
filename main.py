@@ -29,7 +29,7 @@ app = FastAPI(
 
 # 静态文件和模板
 app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="frontend")
 
 # 注册路由
 from controllers.user_controller import router as auth_router

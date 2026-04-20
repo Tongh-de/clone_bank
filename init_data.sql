@@ -63,12 +63,12 @@ CREATE TABLE IF NOT EXISTS `transactions` (
 -- =============================================
 
 -- 插入用户 (密码都是: 123456)
--- bcrypt hash for "123456": $2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4d5GIHwcWuPMx5Wy
+-- bcrypt hash for "123456": $2b$12$YxWPTYPGWGrvdkoHyT2t4upY7nDflVKadKUGxja895qwq7NcT2yca
 INSERT INTO `users` (`username`, `password_hash`, `full_name`, `email`, `role`, `is_active`, `created_at`) VALUES
-('admin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4d5GIHwcWuPMx5Wy', '系统管理员', 'admin@bank.com', 'admin', TRUE, NOW()),
-('zhangsan', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4d5GIHwcWuPMx5Wy', '张三', 'zhangsan@example.com', 'user', TRUE, NOW()),
-('lisi', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4d5GIHwcWuPMx5Wy', '李四', 'lisi@example.com', 'user', TRUE, NOW()),
-('wangwu', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4d5GIHwcWuPMx5Wy', '王五', 'wangwu@example.com', 'user', TRUE, NOW());
+('admin', '$2b$12$YxWPTYPGWGrvdkoHyT2t4upY7nDflVKadKUGxja895qwq7NcT2yca', '系统管理员', 'admin@bank.com', 'admin', TRUE, NOW()),
+('zhangsan', '$2b$12$YxWPTYPGWGrvdkoHyT2t4upY7nDflVKadKUGxja895qwq7NcT2yca', '张三', 'zhangsan@example.com', 'user', TRUE, NOW()),
+('lisi', '$2b$12$YxWPTYPGWGrvdkoHyT2t4upY7nDflVKadKUGxja895qwq7NcT2yca', '李四', 'lisi@example.com', 'user', TRUE, NOW()),
+('wangwu', '$2b$12$YxWPTYPGWGrvdkoHyT2t4upY7nDflVKadKUGxja895qwq7NcT2yca', '王五', 'wangwu@example.com', 'user', TRUE, NOW());
 
 -- 插入账户
 INSERT INTO `accounts` (`account_number`, `account_type`, `balance`, `status`, `owner_id`, `created_at`) VALUES

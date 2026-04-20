@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from decimal import Decimal
 from core.database import get_db
 from models.account import Account, Transaction
-from schemas import TransferRequest
+from schemas import TransferRequest, ApiResponse
 from core.auth import require_login
 from core.logger import log_transaction, log_user_action
 
@@ -23,7 +23,7 @@ async def transfer(
     user = await require_login(request, db)
     
     if transfer_data.amount <= 0:
-        raise HTTPException(status_code=400, detail="转账金额必须大于0")
+        return ApiResponse.error("转账金额必须大于0", code=400)
     
     from_account = db.query(Account).filter(
         Account.account_number == transfer_data.from_account,
@@ -31,26 +31,26 @@ async def transfer(
     ).first()
     
     if not from_account:
-        raise HTTPException(status_code=404, detail="转出账户不存在")
+        return ApiResponse.error("转出账户不存在", code=404)
     
     if from_account.status != "active":
-        raise HTTPException(status_code=400, detail="转出账户状态异常")
+        return ApiResponse.error("转出账户状态异常", code=400)
     
     to_account = db.query(Account).filter(
         Account.account_number == transfer_data.to_account
     ).first()
     
     if not to_account:
-        raise HTTPException(status_code=404, detail="转入账户不存在")
+        return ApiResponse.error("转入账户不存在", code=404)
     
     if to_account.status != "active":
-        raise HTTPException(status_code=400, detail="转入账户状态异常")
+        return ApiResponse.error("转入账户状态异常", code=400)
     
     if from_account.id == to_account.id:
-        raise HTTPException(status_code=400, detail="不能给自己转账")
+        return ApiResponse.error("不能给自己转账", code=400)
     
     if from_account.balance < Decimal(str(transfer_data.amount)):
-        raise HTTPException(status_code=400, detail="余额不足")
+        return ApiResponse.error("余额不足", code=400)
     
     amount = Decimal(str(transfer_data.amount))
     from_balance_before = from_account.balance
@@ -89,10 +89,14 @@ async def transfer(
                    f"从 {transfer_data.from_account} 至 {transfer_data.to_account}, 金额: ¥{float(amount)}",
                    request.client.host if request.client else "")
     
-    return {
-        "message": "转账成功",
-        "amount": float(amount),
-        "from_account": transfer_data.from_account,
-        "to_account": transfer_data.to_account,
-        "remaining_balance": float(from_account.balance)
-    }
+    return ApiResponse.success(
+        data={
+            "amount": float(amount),
+            "from_account": transfer_data.from_account,
+            "to_account": transfer_data.to_account,
+            "remaining_balance": float(from_account.balance),
+            "from_transaction_id": from_transaction.id,
+            "to_transaction_id": to_transaction.id
+        },
+        message="转账成功"
+    )

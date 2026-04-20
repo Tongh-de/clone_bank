@@ -126,7 +126,8 @@ let accountData = null;
 
 async function loadAccountInfo() {
     try {
-        accountData = await apiRequest(`/api/accounts/${accountNumber}`);
+        const res = await apiRequest(`/api/accounts/${accountNumber}`);
+        accountData = res.data || res;
         
         document.getElementById('balance').textContent = parseFloat(accountData.balance).toFixed(2);
         document.getElementById('accountNumber').textContent = accountData.account_number;
@@ -175,7 +176,8 @@ function updateActionButtons() {
 
 async function loadTransactions() {
     try {
-        const transactions = await apiRequest(`/api/accounts/${accountNumber}/transactions?page=${currentPage}`);
+        const res = await apiRequest(`/api/accounts/${accountNumber}/transactions?page=${currentPage}`);
+        const transactions = res.data?.items || res.data || [];
         
         let html = '';
         if (transactions.length === 0) {
@@ -234,7 +236,8 @@ document.getElementById('depositForm').addEventListener('submit', async (e) => {
     
     try {
         const result = await apiRequest(`/api/accounts/${accountNumber}/deposit?amount=${amount}`, 'POST');
-        showToast(`存款成功! 余额: ¥${result.balance.toFixed(2)}`);
+        const data = result.data || result;
+        showToast(`存款成功! 余额: ¥${data.balance.toFixed(2)}`);
         document.getElementById('depositAmount').value = '';
         loadAccountInfo();
         loadTransactions();
@@ -248,7 +251,8 @@ document.getElementById('withdrawForm').addEventListener('submit', async (e) => 
     
     try {
         const result = await apiRequest(`/api/accounts/${accountNumber}/withdraw?amount=${amount}`, 'POST');
-        showToast(`取款成功! 余额: ¥${result.balance.toFixed(2)}`);
+        const data = result.data || result;
+        showToast(`取款成功! 余额: ¥${data.balance.toFixed(2)}`);
         document.getElementById('withdrawAmount').value = '';
         loadAccountInfo();
         loadTransactions();

@@ -3,26 +3,31 @@
 {% block title %}AI客服 - 银行账户管理系统{% endblock %}
 
 {% block content %}
+<!-- 隐藏的用户信息 -->
+<span id="currentUserName" style="display:none;">{{ user.full_name if user else '用户' }}</span>
+
 <div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-robot"></i> AI智能客服 - 小银</span>
-                <button class="btn btn-sm btn-outline-secondary" onclick="clearChat()">
+                <span>
+                    <i class="bi bi-robot"></i> 
+                    AI智能客服 - 小银
+                </span>
+                <button class="btn btn-sm btn-outline-primary" onclick="clearChat()">
                     <i class="bi bi-trash"></i> 清空对话
                 </button>
             </div>
             <div class="card-body p-0">
-                <div id="chatContainer" class="chat-container" style="height: 500px; overflow-y: auto; padding: 20px;">
-                    <!-- 欢迎消息 -->
+                <div id="chatContainer" class="chat-container">
                     <div class="d-flex justify-content-start mb-3">
                         <div class="ai-message">
-                            <div class="message-avatar me-2">
+                            <div class="ai-avatar">
                                 <i class="bi bi-robot"></i>
                             </div>
                             <div class="message-content">
                                 <div class="message-header">小银</div>
-                                <div class="message-text">
+                                <div class="ai-bubble" id="welcomeMessage">
                                     您好！我是银行AI智能客服小银，请问有什么可以帮助您的吗？
                                 </div>
                             </div>
@@ -31,7 +36,7 @@
                 </div>
                 <div class="chat-input-area p-3 border-top">
                     <div class="input-group">
-                        <input type="text" id="chatInput" class="form-control" placeholder="输入您的问题..." onkeypress="handleKeyPress(event)">
+                        <input type="text" id="chatInput" class="form-control" placeholder="输入您的问题，按回车发送..." onkeypress="handleKeyPress(event)">
                         <button class="btn btn-primary" type="button" onclick="sendMessage()">
                             <i class="bi bi-send"></i> 发送
                         </button>
@@ -44,72 +49,100 @@
 
 <style>
 .chat-container {
-    background: #f8f9fa;
+    height: 500px;
+    overflow-y: auto;
+    padding: 16px;
+    background: #f5f7fa;
 }
+
 .user-message, .ai-message {
     display: flex;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    align-items: flex-start;
 }
+
 .user-message {
     flex-direction: row-reverse;
 }
-.message-avatar {
+
+.ai-avatar {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
-    background: var(--secondary-color);
+    border-radius: 6px;
+    background: #1a365d;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background: #4a5568;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     flex-shrink: 0;
 }
-.ai-message .message-avatar {
-    background: var(--primary-color);
-}
+
 .message-content {
     max-width: 70%;
     margin: 0 10px;
 }
+
 .message-header {
-    font-size: 0.8rem;
-    color: #666;
-    margin-bottom: 3px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-weight: 500;
 }
-.message-text {
-    padding: 12px 16px;
-    border-radius: 15px;
-    line-height: 1.5;
-}
-.user-message .message-text {
-    background: var(--primary-color);
-    color: white;
-    border-bottom-right-radius: 3px;
-}
-.ai-message .message-text {
+
+.ai-bubble {
+    padding: 10px 14px;
+    border-radius: 8px;
     background: white;
-    color: #333;
-    border-bottom-left-radius: 3px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    line-height: 1.5;
+    font-size: 14px;
 }
+
+.user-bubble {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: white;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    line-height: 1.5;
+    font-size: 14px;
+}
+
 .typing-indicator {
     display: flex;
-    gap: 4px;
-    padding: 15px 20px;
+    gap: 5px;
+    padding: 16px;
 }
+
 .typing-indicator span {
     width: 8px;
     height: 8px;
-    background: #999;
+    background: var(--text-muted);
     border-radius: 50%;
-    animation: typing 1.4s infinite;
+    animation: typing 1.4s infinite ease-in-out;
 }
+
 .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
 .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
 @keyframes typing {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-6px); }
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
 }
 </style>
 {% endblock %}
@@ -117,32 +150,37 @@
 {% block extra_js %}
 <script>
 let conversationHistory = [];
+const userName = document.getElementById('currentUserName').textContent || '用户';
+
+function getWelcomeMessage() {
+    return `您好，${userName}！我是银行AI智能客服小银，请问有什么可以帮助您的吗？`;
+}
 
 function addMessage(role, content) {
     const container = document.getElementById('chatContainer');
     const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
     
     const messageDiv = document.createElement('div');
-    messageDiv.className = role === 'user' ? 'd-flex justify-content-end mb-3' : 'd-flex justify-content-start mb-3';
+    messageDiv.className = role === 'user' ? 'user-message' : 'ai-message';
     
     if (role === 'user') {
         messageDiv.innerHTML = `
-            <div class="message-content" style="text-align: right;">
-                <div class="message-header">${time}</div>
-                <div class="message-text">${escapeHtml(content)}</div>
+            <div class="user-avatar">
+                <i class="bi bi-person-fill"></i>
             </div>
-            <div class="message-avatar">
-                <i class="bi bi-person"></i>
+            <div class="message-content" style="align-items: flex-end;">
+                <div class="message-header">我 · ${time}</div>
+                <div class="user-bubble">${escapeHtml(content)}</div>
             </div>
         `;
     } else {
         messageDiv.innerHTML = `
-            <div class="message-avatar">
+            <div class="ai-avatar">
                 <i class="bi bi-robot"></i>
             </div>
             <div class="message-content">
                 <div class="message-header">小银 · ${time}</div>
-                <div class="message-text">${escapeHtml(content)}</div>
+                <div class="ai-bubble">${escapeHtml(content)}</div>
             </div>
         `;
     }
@@ -155,9 +193,9 @@ function showTyping() {
     const container = document.getElementById('chatContainer');
     const typingDiv = document.createElement('div');
     typingDiv.id = 'typingIndicator';
-    typingDiv.className = 'd-flex justify-content-start mb-3';
+    typingDiv.className = 'ai-message';
     typingDiv.innerHTML = `
-        <div class="message-avatar">
+        <div class="ai-avatar">
             <i class="bi bi-robot"></i>
         </div>
         <div class="message-content">
@@ -205,11 +243,13 @@ async function sendMessage() {
         hideTyping();
         
         if (!response.ok) {
-            throw new Error(data.detail || '服务出错');
+            throw new Error(data.detail || data.message || '服务出错');
         }
         
-        addMessage('assistant', data.response);
-        conversationHistory.push({ role: 'assistant', content: data.response });
+        // 适配统一响应格式
+        const aiResponse = data.data?.response || data.response || data.data || '';
+        addMessage('assistant', aiResponse);
+        conversationHistory.push({ role: 'assistant', content: aiResponse });
     } catch (error) {
         hideTyping();
         addMessage('assistant', '抱歉，服务暂时不可用，请稍后再试。错误信息: ' + error.message);
@@ -219,16 +259,14 @@ async function sendMessage() {
 function clearChat() {
     conversationHistory = [];
     document.getElementById('chatContainer').innerHTML = `
-        <div class="d-flex justify-content-start mb-3">
-            <div class="ai-message">
-                <div class="message-avatar me-2">
-                    <i class="bi bi-robot"></i>
-                </div>
-                <div class="message-content">
-                    <div class="message-header">小银</div>
-                    <div class="message-text">
-                        对话已清空，请问有什么可以帮助您的吗？
-                    </div>
+        <div class="ai-message">
+            <div class="ai-avatar">
+                <i class="bi bi-robot"></i>
+            </div>
+            <div class="message-content">
+                <div class="message-header">小银</div>
+                <div class="ai-bubble">
+                    对话已清空，${userName}，请问有什么可以帮助您的吗？
                 </div>
             </div>
         </div>
@@ -241,6 +279,9 @@ function handleKeyPress(event) {
         sendMessage();
     }
 }
+
+// 页面加载时更新欢迎消息
+document.getElementById('welcomeMessage').textContent = getWelcomeMessage();
 
 document.getElementById('chatInput').focus();
 </script>

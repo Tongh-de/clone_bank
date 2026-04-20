@@ -101,7 +101,8 @@ let currentPage = 1;
 async function loadAccounts() {
     const status = document.getElementById('statusFilter').value;
     try {
-        const accounts = await apiRequest(`/api/accounts/list?page=${currentPage}${status ? '&status_filter=' + status : ''}`);
+        const res = await apiRequest(`/api/accounts/list?page=${currentPage}${status ? '&status_filter=' + status : ''}`);
+        const accounts = res.data?.items || res.data || [];
         
         let html = '';
         if (accounts.length === 0) {

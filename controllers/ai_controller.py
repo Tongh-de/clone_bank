@@ -8,7 +8,7 @@ from core.auth import get_current_user
 from core.database import get_db
 from services.ai_customer_service import chat_with_qwen
 from services.ai_service import chat, get_available_models
-from schemas import AIChatRequest, AIChatResponse, ModelListResponse
+from schemas import AIChatRequest, AIChatResponse, ModelListResponse, ApiResponse
 from core.logger import ai_logger, log_ai_request
 
 router = APIRouter(prefix="/api/ai", tags=["AI客服"])
@@ -33,11 +33,11 @@ async def chat(request: ChatRequest, http_request: Request, db: Session = Depend
         messages = [{"role": "user", "content": request.message}]
         response = await chat_with_qwen(messages)
         log_ai_request(user.username, request.message, "客服对话", True)
-        return {"response": response}
+        return ApiResponse.success(data={"response": response}, message="对话成功")
     except Exception as e:
         log_ai_request(user.username, request.message, "客服对话", False)
         ai_logger.error(f"AI客服错误: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"AI服务错误: {str(e)}")
+        return ApiResponse.error(message=f"AI服务错误: {str(e)}", code=500)
 
 
 @router.post("/chat/stream")
@@ -50,12 +50,12 @@ async def chat_stream(request: ChatHistoryRequest, http_request: Request, db: Se
     try:
         messages = request.messages if isinstance(request.messages, list) else []
         response = await chat_with_qwen(messages)
-        return {"response": response}
+        return ApiResponse.success(data={"response": response}, message="对话成功")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI服务错误: {str(e)}")
+        return ApiResponse.error(message=f"AI服务错误: {str(e)}", code=500)
 
 
-@router.post("/chat/advanced", response_model=AIChatResponse)
+@router.post("/chat/advanced")
 async def chat_advanced(
     request: AIChatRequest,
     http_request: Request,
@@ -73,15 +73,18 @@ async def chat_advanced(
             method=request.method
         )
         log_ai_request(user.username, str(request.messages), f"高级对话({request.model})", result.get("success", False))
-        return AIChatResponse(**result)
+        return ApiResponse.success(data=AIChatResponse(**result), message="对话成功")
     except Exception as e:
         ai_logger.error(f"高级AI对话错误: {str(e)}")
-        return AIChatResponse(
-            success=False,
-            response="",
-            model=request.model,
-            method=request.method,
-            error=str(e)
+        return ApiResponse.success(
+            data=AIChatResponse(
+                success=False,
+                response="",
+                model=request.model,
+                method=request.method,
+                error=str(e)
+            ),
+            message="对话失败"
         )
 
 

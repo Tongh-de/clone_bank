@@ -11,7 +11,7 @@ import uuid
 from core.database import get_db
 from models.account import Account, Transaction
 from models.user import User
-from schemas import ReportRequest, ReportResponse
+from schemas import ReportRequest, ReportResponse, ApiResponse
 from core.auth import require_login
 from core import config
 
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/reports", tags=["报表"])
 os.makedirs(config.REPORT_DIR, exist_ok=True)
 
 
-@router.post("/generate", response_model=ReportResponse)
+@router.post("/generate")
 async def generate_report(
     request: Request,
     report_data: ReportRequest,
@@ -37,18 +37,14 @@ async def generate_report(
         elif report_data.report_type == "account":
             file_path = generate_account_report(db, user, report_data)
         else:
-            raise HTTPException(status_code=400, detail="无效的报表类型")
+            return ApiResponse.error(message="无效的报表类型", code=400)
         
-        return ReportResponse(
-            success=True,
-            message="报表生成成功",
-            file_path=file_path
+        return ApiResponse.success(
+            data=ReportResponse(success=True, message="报表生成成功", file_path=file_path),
+            message="报表生成成功"
         )
     except Exception as e:
-        return ReportResponse(
-            success=False,
-            message=f"报表生成失败: {str(e)}"
-        )
+        return ApiResponse.error(message=f"报表生成失败: {str(e)}")
 
 
 def generate_daily_report(db: Session, user: User, report_data: ReportRequest) -> str:
@@ -399,4 +395,7 @@ async def list_reports(
                 "created": datetime.fromtimestamp(stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
             })
     
-    return sorted(files, key=lambda x: x["created"], reverse=True)
+    return ApiResponse.success(
+        data=sorted(files, key=lambda x: x["created"], reverse=True),
+        message="查询成功"
+    )

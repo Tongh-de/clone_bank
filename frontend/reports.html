@@ -151,7 +151,8 @@ let accounts = [];
 
 async function loadAccounts() {
     try {
-        accounts = await apiRequest('/api/accounts/list');
+        const res = await apiRequest('/api/accounts/list');
+        accounts = res.data?.items || res.data || [];
         const options = accounts.map(acc => 
             `<option value="${acc.account_number}">${acc.account_number} (¥${parseFloat(acc.balance).toFixed(2)})</option>`
         ).join('');
@@ -180,7 +181,8 @@ function toggleAccountField() {
 
 async function loadReports() {
     try {
-        const reports = await apiRequest('/api/reports/list');
+        const res = await apiRequest('/api/reports/list');
+        const reports = Array.isArray(res) ? res : (res.data || []);
         
         if (reports.length === 0) {
             document.getElementById('reportsTable').innerHTML = 
@@ -234,15 +236,16 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
         };
         
         const result = await apiRequest('/api/reports/generate', 'POST', data);
+        const reportResult = result.data || result;
         
-        if (result.success && result.file_path) {
+        if (reportResult.success && reportResult.file_path) {
             // 自动下载
             const filename = result.file_path.split('/').pop();
             window.location.href = `/api/reports/download/${filename}`;
             showToast('报表生成成功!');
             loadReports();
         } else {
-            showToast(result.message, true);
+            showToast(reportResult.message, true);
         }
     } catch (error) {}
 });

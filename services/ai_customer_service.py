@@ -8,16 +8,18 @@ from core import config
 
 DASHSCOPE_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
 
-# 城市映射
+# 城市映射 (wttr.in 支持的城市)
 CITY_PINGYIN = {
     "北京": "Beijing", "上海": "Shanghai", "广州": "Guangzhou", "深圳": "Shenzhen",
     "杭州": "Hangzhou", "南京": "Nanjing", "武汉": "Wuhan", "成都": "Chengdu",
-    "重庆": "Chongqing", "西安": "Xi'an", "天津": "Tianjin", "苏州": "Suzhou",
+    "重庆": "Chongqing", "西安": "Xian", "天津": "Tianjin", "苏州": "Suzhou",
     "郑州": "Zhengzhou", "长沙": "Changsha", "沈阳": "Shenyang", "青岛": "Qingdao",
     "宁波": "Ningbo", "东莞": "Dongguan", "无锡": "Wuxi", "昆明": "Kunming",
     "大连": "Dalian", "厦门": "Xiamen", "合肥": "Hefei", "佛山": "Foshan",
     "福州": "Fuzhou", "哈尔滨": "Harbin", "济南": "Jinan", "温州": "Wenzhou",
-    "长春": "Changchun", "石家庄": "Shijiazhuang"
+    "长春": "Changchun", "石家庄": "Shijiazhuang", "贵阳": "Guiyang",
+    "太原": "Taiyuan", "南昌": "Nanchang", "南宁": "Nanning", "拉萨": "Lhasa",
+    "乌鲁木齐": "Urumqi", "呼和浩特": "Hohhot", "海口": "Haikou", "三亚": "Sanya"
 }
 COMMON_CITIES = list(CITY_PINGYIN.keys())
 
@@ -44,29 +46,32 @@ async def get_weather(city: str = "北京") -> str:
     """获取天气信息"""
     try:
         city_pinyin = CITY_PINGYIN.get(city, city)
+        # wttr.in 使用 /{城市名}?format=j1 格式
         url = f"https://wttr.in/{city_pinyin}?format=j1"
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url)
+        headers = {"User-Agent": "Mozilla/5.0"}
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
-                current = data["current_condition"][0]
-                temp = current["temp_C"]
-                weather = current["weatherDesc"][0]["value"]
-                humidity = current["humidity"]
-                wind = current["windspeedKmph"]
-                feels_like = current["FeelsLikeC"]
-                weather_map = {
-                    "Sunny": "晴天", "Clear": "晴朗", "Partly cloudy": "多云",
-                    "Cloudy": "阴天", "Overcast": "阴天", "Mist": "有雾",
-                    "Fog": "大雾", "Light rain": "小雨", "Heavy rain": "大雨",
-                    "Light snow": "小雪", "Heavy snow": "大雪", "Thunderstorm": "雷阵雨",
-                    "Light drizzle": "毛毛雨"
-                }
-                weather_cn = weather_map.get(weather, weather)
-                return f"{city}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind}km/h"
-    except Exception:
-        pass
-    return "天气查询暂时不可用"
+                if "current_condition" in data and len(data["current_condition"]) > 0:
+                    current = data["current_condition"][0]
+                    temp = current["temp_C"]
+                    weather = current["weatherDesc"][0]["value"]
+                    humidity = current["humidity"]
+                    wind = current["windspeedKmph"]
+                    feels_like = current["FeelsLikeC"]
+                    weather_map = {
+                        "Sunny": "晴天", "Clear": "晴朗", "Partly cloudy": "多云",
+                        "Cloudy": "阴天", "Overcast": "阴天", "Mist": "有雾",
+                        "Fog": "大雾", "Light rain": "小雨", "Heavy rain": "大雨",
+                        "Light snow": "小雪", "Heavy snow": "大雪", "Thunderstorm": "雷阵雨",
+                        "Light drizzle": "毛毛雨", "Moderate rain": "中雨"
+                    }
+                    weather_cn = weather_map.get(weather, weather)
+                    return f"{city}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind}km/h"
+    except Exception as e:
+        print(f"天气API错误: {e}")
+    return None  # 返回None让调用方决定是否使用默认值
 
 
 def extract_location_keywords(message: str) -> bool:
@@ -179,12 +184,15 @@ async def chat_with_qwen(messages: list) -> str:
     # 天气查询
     weather_info = ""
     weather_keywords = ["天气", "气温", "温度", "下雨", "下雪", "晴", "阴", "冷", "热"]
+    city_queried = None
     if any(keyword in user_message for keyword in weather_keywords):
         city = extract_city_from_message(user_message)
         if city:
-            weather_info = await get_weather(city)
-    if not weather_info:
-        weather_info = await get_weather("北京")
+            weather_info = await get_weather(city) or ""
+            city_queried = city
+    # 如果用户询问天气但查询失败，返回友好提示
+    if any(keyword in user_message for keyword in weather_keywords) and not weather_info:
+        weather_info = f"暂无法获取{city_queried or '该城市'}的实时天气数据"
     
     # 地图位置查询
     location_info = ""
