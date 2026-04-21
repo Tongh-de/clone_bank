@@ -4,16 +4,14 @@
 
 {% block content %}
 <!-- 欢迎标题 -->
-<div class="row mb-4">
-    <div class="col">
-        <h2 style="font-weight: 700; color: var(--text-primary);">
-            <i class="bi bi-house-door"></i> 
-            欢迎回来, {{ user.full_name }}
-        </h2>
-        <p class="text-muted">
-            <i class="bi bi-calendar3"></i> <span id="currentDate"></span>
-        </p>
-    </div>
+<div class="page-title">
+    <i class="bi bi-house-door"></i>
+    欢迎回来, {{ user.full_name }}
+</div>
+<div class="mb-3">
+    <p class="text-muted mb-0">
+        <i class="bi bi-calendar3"></i> <span id="currentDate"></span>
+    </p>
 </div>
 
 <!-- 统计卡片 -->
@@ -57,39 +55,35 @@
 </div>
 
 <!-- 快捷操作 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-lightning-charge me-2"></i> 快捷操作
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-lightning-charge me-2"></i> 快捷操作
+    </div>
+    <div class="card-body py-3">
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <a href="#" class="quick-btn" onclick="showCreateAccountModal(); return false;">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>开户</span>
+                </a>
             </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3 col-sm-6">
-                        <a href="#" class="quick-btn" onclick="showCreateAccountModal(); return false;">
-                            <i class="bi bi-plus-circle"></i>
-                            <span>开户</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="#" class="quick-btn deposit" onclick="showDepositModal(); return false;">
-                            <i class="bi bi-arrow-down-circle"></i>
-                            <span>存款</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="#" class="quick-btn withdraw" onclick="showWithdrawModal(); return false;">
-                            <i class="bi bi-arrow-up-circle"></i>
-                            <span>取款</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="/transfer" class="quick-btn transfer">
-                            <i class="bi bi-arrow-left-right"></i>
-                            <span>转账</span>
-                        </a>
-                    </div>
-                </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="#" class="quick-btn deposit" onclick="showDepositModal(); return false;">
+                    <i class="bi bi-arrow-down-circle"></i>
+                    <span>存款</span>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="#" class="quick-btn withdraw" onclick="showWithdrawModal(); return false;">
+                    <i class="bi bi-arrow-up-circle"></i>
+                    <span>取款</span>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="/transfer" class="quick-btn transfer">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>转账</span>
+                </a>
             </div>
         </div>
     </div>
@@ -202,7 +196,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" style="color: var(--accent-end);">
+                <h5 class="modal-title" style="color: var(--warning);">
                     <i class="bi bi-arrow-up-circle me-2"></i>取款
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

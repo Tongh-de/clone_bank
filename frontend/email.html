@@ -3,23 +3,22 @@
 {% block title %}发送邮件 - 银行账户管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2><i class="bi bi-robot"></i> AI智能邮件</h2>
-    </div>
+<div class="page-title">
+    <i class="bi bi-envelope"></i>
+    AI智能邮件
 </div>
 
 <div class="row">
     <div class="col-md-10 offset-md-1">
         <!-- AI生成区域 -->
-        <div class="card mb-4">
-            <div class="card-header bg-success text-white">
+        <div class="card mb-3">
+            <div class="card-header">
                 <i class="bi bi-magic"></i> 一键生成邮件内容
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">邮件用途</label>
+                        <label class="form-label required">邮件用途</label>
                         <select class="form-select" id="emailPurpose" required>
                             <option value="">请选择邮件类型</option>
                             <option value="账户余额通知">账户余额通知</option>
@@ -35,15 +34,15 @@
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">客户姓名（可选）</label>
+                        <label class="form-label">客户姓名</label>
                         <input type="text" class="form-control" id="customerName" placeholder="如：张三">
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">附加说明（可选）</label>
+                    <label class="form-label">附加说明</label>
                     <input type="text" class="form-control" id="extraInfo" placeholder="如：推荐高收益理财产品，期限6个月">
                 </div>
-                <button type="button" class="btn btn-success btn-lg" id="generateBtn" onclick="generateEmail()">
+                <button type="button" class="btn btn-success" id="generateBtn" onclick="generateEmail()">
                     <i class="bi bi-magic"></i> 生成邮件
                 </button>
             </div>
@@ -55,14 +54,14 @@
 
         <!-- 邮件编辑与发送 -->
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header">
                 <i class="bi bi-send"></i> 编辑并发送
             </div>
             <div class="card-body">
                 <form id="emailForm">
                     <div class="row">
                         <div class="col-md-8 mb-3">
-                            <label class="form-label">收件人邮箱</label>
+                            <label class="form-label required">收件人邮箱</label>
                             <input type="email" class="form-control" id="toEmail" required placeholder="例如：user@example.com">
                         </div>
                         <div class="col-md-4 mb-3 d-flex align-items-end">
@@ -82,18 +81,16 @@
                         <textarea class="form-control" id="content" rows="10" placeholder="AI生成的内容可在此修改..."></textarea>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-send"></i> 发送邮件
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send"></i> 发送邮件
+                    </button>
                 </form>
             </div>
         </div>
 
         <!-- 使用说明 -->
-        <div class="card mt-4">
-            <div class="card-header bg-info text-white">
+        <div class="card mt-3">
+            <div class="card-header">
                 <i class="bi bi-info-circle"></i> 使用说明
             </div>
             <div class="card-body">

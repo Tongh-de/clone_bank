@@ -2,6 +2,7 @@
 银行账户管理系统 - 主入口
 MVC架构 - FastAPI + MySQL
 """
+import os
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +14,9 @@ from models.account import Account, Transaction
 from core.auth import get_current_user, get_password_hash
 from core.logger import app_logger
 from core import config
+
+# 获取项目根目录
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 创建表
 Base.metadata.create_all(bind=engine)
@@ -27,9 +31,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# 静态文件和模板
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="frontend")
+# 静态文件和模板（使用绝对路径）
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "frontend"))
 
 # 注册路由
 from controllers.user_controller import router as auth_router

@@ -3,36 +3,33 @@
 {% block title %}我的账户 - 银行账户管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h2><i class="bi bi-wallet2"></i> 我的账户</h2>
+<div class="page-title">
+    <i class="bi bi-wallet2"></i>
+    我的账户
+</div>
+
+<div class="toolbar">
+    <div class="d-flex align-items-center gap-3">
+        <strong>账户总余额:</strong>
+        <span id="totalBalance" class="text-success fs-5 fw-bold">¥0.00</span>
     </div>
-    <div class="col-md-4 text-end">
-        <button class="btn btn-primary" onclick="showCreateModal()">
-            <i class="bi bi-plus-circle"></i> 开户
-        </button>
-    </div>
+    <button class="btn btn-primary" onclick="showCreateModal()">
+        <i class="bi bi-plus-circle"></i> 开户
+    </button>
 </div>
 
 <!-- 筛选 -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row">
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
             <div class="col-md-4">
-                <label class="form-label">状态筛选</label>
-                <select class="form-select" id="statusFilter" onchange="loadAccounts()">
+                <label class="form-label mb-0">状态筛选</label>
+                <select class="form-select form-select-sm mt-1" id="statusFilter" onchange="loadAccounts()" style="height: 36px;">
                     <option value="">全部</option>
                     <option value="active">正常</option>
                     <option value="frozen">冻结</option>
                     <option value="closed">已销户</option>
                 </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">&nbsp;</label>
-                <div>
-                    <strong>总余额: </strong>
-                    <span id="totalBalance" class="text-success fs-5">¥0.00</span>
-                </div>
             </div>
         </div>
     </div>
@@ -40,24 +37,22 @@
 
 <!-- 账户列表 -->
 <div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>账户号</th>
-                        <th>类型</th>
-                        <th>余额</th>
-                        <th>状态</th>
-                        <th>开户时间</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="accountsTable">
-                    <tr><td colspan="6" class="text-center text-muted">加载中...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>账户号</th>
+                    <th>类型</th>
+                    <th>余额</th>
+                    <th>状态</th>
+                    <th>开户时间</th>
+                    <th class="text-center">操作</th>
+                </tr>
+            </thead>
+            <tbody id="accountsTable">
+                <tr><td colspan="6" class="text-center text-muted py-4">加载中...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -71,7 +66,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">开立新账户</h5>
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> 开立新账户</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="createForm">
@@ -85,8 +80,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">确定开户</button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">确认开户</button>
                 </div>
             </form>
         </div>
@@ -127,22 +122,22 @@ async function loadAccounts() {
                         <td class="text-success fw-bold">¥${parseFloat(acc.balance).toFixed(2)}</td>
                         <td><span class="badge ${statusBadge}">${statusText}</span></td>
                         <td>${new Date(acc.created_at).toLocaleDateString()}</td>
-                        <td>
-                            <a href="/account/${acc.account_number}" class="btn btn-sm btn-info text-white">
-                                <i class="bi bi-eye"></i>
+                        <td class="text-center">
+                            <a href="/account/${acc.account_number}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> 详情
                             </a>
                             ${acc.status === 'active' ? `
-                                <button class="btn btn-sm btn-warning" onclick="freezeAccount('${acc.account_number}')">
-                                    <i class="bi bi-snow2"></i>
+                                <button class="btn btn-sm btn-outline-warning" onclick="freezeAccount('${acc.account_number}')">
+                                    <i class="bi bi-snow2"></i> 冻结
                                 </button>
                             ` : acc.status === 'frozen' ? `
-                                <button class="btn btn-sm btn-success" onclick="unfreezeAccount('${acc.account_number}')">
-                                    <i class="bi bi-sun"></i>
+                                <button class="btn btn-sm btn-outline-success" onclick="unfreezeAccount('${acc.account_number}')">
+                                    <i class="bi bi-sun"></i> 解冻
                                 </button>
                             ` : ''}
                             ${acc.status !== 'closed' && parseFloat(acc.balance) === 0 ? `
-                                <button class="btn btn-sm btn-danger" onclick="closeAccount('${acc.account_number}')">
-                                    <i class="bi bi-x-circle"></i>
+                                <button class="btn btn-sm btn-outline-danger" onclick="closeAccount('${acc.account_number}')">
+                                    <i class="bi bi-x-circle"></i> 销户
                                 </button>
                             ` : ''}
                         </td>

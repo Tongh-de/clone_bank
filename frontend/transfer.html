@@ -3,51 +3,52 @@
 {% block title %}转账 - 银行账户管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2><i class="bi bi-arrow-left-right"></i> 转账汇款</h2>
-    </div>
+<div class="page-title">
+    <i class="bi bi-arrow-left-right"></i>
+    转账汇款
 </div>
 
 <div class="row">
     <!-- 转账表单 -->
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header">
                 <i class="bi bi-send"></i> 转账信息
             </div>
             <div class="card-body">
                 <form id="transferForm">
-                    <div class="mb-3">
-                        <label class="form-label">转出账户</label>
-                        <select class="form-select form-select-lg" id="fromAccount" required>
-                            <option value="">请选择转出账户</option>
-                        </select>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label required">转出账户</label>
+                            <select class="form-select" id="fromAccount" required>
+                                <option value="">请选择转出账户</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">转入账户</label>
-                        <input type="text" class="form-control form-control-lg" id="toAccount" 
+                        <label class="form-label required">转入账户</label>
+                        <input type="text" class="form-control" id="toAccount" 
                                placeholder="请输入转入账户号" required maxlength="16">
                         <small class="text-muted">请仔细核对账户号，转账后无法撤回</small>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">转账金额</label>
-                        <div class="input-group input-group-lg">
+                        <label class="form-label required">转账金额</label>
+                        <div class="input-group">
                             <span class="input-group-text">¥</span>
                             <input type="number" class="form-control" id="amount" 
                                    placeholder="0.00" step="0.01" min="0.01" required>
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">备注 (可选)</label>
+                    <div class="mb-4">
+                        <label class="form-label">备注</label>
                         <input type="text" class="form-control" id="description" 
                                placeholder="添加备注..." maxlength="100">
                     </div>
                     
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-check-circle"></i> 确认转账
                     </button>
                 </form>
@@ -58,34 +59,34 @@
     <!-- 转账说明 -->
     <div class="col-md-4">
         <div class="card">
-            <div class="card-header bg-info text-white">
+            <div class="card-header">
                 <i class="bi bi-info-circle"></i> 转账须知
             </div>
             <div class="card-body">
-                <ul class="list-unstyled">
-                    <li class="mb-3">
-                        <i class="bi bi-1-circle text-primary"></i>
-                        转账金额实时到账
+                <ul class="list-unstyled mb-0">
+                    <li class="d-flex align-items-start mb-3">
+                        <span class="badge bg-primary rounded-circle me-2" style="width: 20px; height: 20px; line-height: 14px; font-size: 11px;">1</span>
+                        <span>转账金额实时到账</span>
                     </li>
-                    <li class="mb-3">
-                        <i class="bi bi-2-circle text-primary"></i>
-                        请仔细核对转入账户信息
+                    <li class="d-flex align-items-start mb-3">
+                        <span class="badge bg-primary rounded-circle me-2" style="width: 20px; height: 20px; line-height: 14px; font-size: 11px;">2</span>
+                        <span>请仔细核对转入账户信息</span>
                     </li>
-                    <li class="mb-3">
-                        <i class="bi bi-3-circle text-primary"></i>
-                        转账完成后无法撤回
+                    <li class="d-flex align-items-start mb-3">
+                        <span class="badge bg-primary rounded-circle me-2" style="width: 20px; height: 20px; line-height: 14px; font-size: 11px;">3</span>
+                        <span>转账完成后无法撤回</span>
                     </li>
-                    <li class="mb-3">
-                        <i class="bi bi-4-circle text-primary"></i>
-                        如有疑问请联系客服
+                    <li class="d-flex align-items-start">
+                        <span class="badge bg-primary rounded-circle me-2" style="width: 20px; height: 20px; line-height: 14px; font-size: 11px;">4</span>
+                        <span>如有疑问请联系客服</span>
                     </li>
                 </ul>
             </div>
         </div>
         
         <!-- 我的账户余额 -->
-        <div class="card mt-4">
-            <div class="card-header bg-secondary text-white">
+        <div class="card mt-3">
+            <div class="card-header">
                 <i class="bi bi-wallet2"></i> 我的账户余额
             </div>
             <div class="card-body" id="balanceList">

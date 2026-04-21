@@ -3,23 +3,22 @@
 {% block title %}报表管理 - 银行账户管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2><i class="bi bi-file-earmark-bar-graph"></i> 报表管理</h2>
-    </div>
+<div class="page-title">
+    <i class="bi bi-file-earmark-bar-graph"></i>
+    报表管理
 </div>
 
 <div class="row">
     <!-- 生成报表 -->
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header">
                 <i class="bi bi-file-plus"></i> 生成报表
             </div>
             <div class="card-body">
                 <form id="reportForm">
                     <div class="mb-3">
-                        <label class="form-label">报表类型</label>
+                        <label class="form-label required">报表类型</label>
                         <select class="form-select" id="reportType" required onchange="toggleAccountField()">
                             <option value="daily">日报</option>
                             <option value="monthly">月报</option>
@@ -28,7 +27,7 @@
                     </div>
                     
                     <div class="mb-3" id="dateRangeFields">
-                        <label class="form-label">日期</label>
+                        <label class="form-label required">日期范围</label>
                         <div class="row">
                             <div class="col-6">
                                 <input type="date" class="form-control" id="startDate">
@@ -37,18 +36,17 @@
                                 <input type="date" class="form-control" id="endDate">
                             </div>
                         </div>
-                        <small class="text-muted">留空则使用当天</small>
                     </div>
                     
                     <div class="mb-3" id="accountField" style="display: none;">
-                        <label class="form-label">选择账户</label>
+                        <label class="form-label required">选择账户</label>
                         <select class="form-select" id="accountNumber">
                             <option value="">加载中...</option>
                         </select>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">导出格式</label>
+                        <label class="form-label required">导出格式</label>
                         <select class="form-select" id="reportFormat">
                             <option value="pdf">PDF</option>
                             <option value="excel">Excel</option>
@@ -66,10 +64,10 @@
     <!-- 报表说明 -->
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-info text-white">
+            <div class="card-header">
                 <i class="bi bi-question-circle"></i> 报表说明
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="accordion" id="reportAccordion">
                     <div class="accordion-item">
                         <h2 class="accordion-header">
@@ -117,28 +115,26 @@
 <div class="row mt-4">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <i class="bi bi-clock-history"></i> 历史报表
-                <button class="btn btn-sm btn-light float-end" onclick="loadReports()">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history"></i> 历史报表</span>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadReports()">
                     <i class="bi bi-arrow-clockwise"></i> 刷新
                 </button>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>文件名</th>
-                                <th>大小</th>
-                                <th>生成时间</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reportsTable">
-                            <tr><td colspan="4" class="text-center text-muted">加载中...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>文件名</th>
+                            <th>大小</th>
+                            <th>生成时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTable">
+                        <tr><td colspan="4" class="text-center text-muted py-4">加载中...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

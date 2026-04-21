@@ -131,8 +131,15 @@ async def get_weather_wttr(city: str = "北京") -> str:
                     }
                     weather_cn = weather_map.get(weather, weather)
                     return f"{city}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind}km/h"
+    except httpx.ConnectError as e:
+        # 网络连接错误（DNS解析失败、连接超时等）
+        print(f"wttr.in连接失败: {e}")
+    except httpx.TimeoutException as e:
+        # 请求超时
+        print(f"wttr.in请求超时: {e}")
     except Exception as e:
-        print(f"wttr.in错误: {e}")
+        # 其他错误
+        print(f"wttr.in错误: {type(e).__name__}: {e}")
     return None
 
 
