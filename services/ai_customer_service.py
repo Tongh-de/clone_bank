@@ -3,14 +3,16 @@
 """
 import httpx
 import re
-from datetime import datetime
+import asyncio
+from datetime import datetime, timedelta
 from core import config
 
 DASHSCOPE_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
 
-# OpenWeatherMap API (免费版，支持全球任意城市/县级)
-OWM_API_KEY = "4d8fb5b93d4af21d66e4d2061f0e60e0"  # 免费API Key
-OWM_API_URL = "https://api.openweathermap.org/data/2.5/weather"
+# wttr.in 天气 API（免费，无需 key）
+
+# 天气缓存（5分钟有效期）
+_weather_cache = {}
 
 # 城市映射 (wttr.in 支持的城市，作为备选)
 CITY_PINGYIN = {
@@ -52,7 +54,9 @@ def extract_city_from_message(message: str) -> str:
     for pattern in patterns:
         match = re.search(pattern, msg)
         if match:
-            return match.group(1).strip()
+            city = match.group(1).strip()
+            # 和风天气API只支持到城市级别，需要规范化区县名
+            return _normalize_city_for_weather(city)
     
     # 回退：检查已知城市列表
     for city in COMMON_CITIES:
@@ -61,62 +65,43 @@ def extract_city_from_message(message: str) -> str:
     return None
 
 
-async def get_weather(city: str = "北京") -> str:
-    """获取天气信息（支持县级城市）"""
-    # 优先使用 OpenWeatherMap（支持全球任意城市）
-    weather = await get_weather_openweathermap(city)
-    if weather:
-        return weather
-    
-    # 备选：使用 wttr.in
-    weather = await get_weather_wttr(city)
-    if weather:
-        return weather
-    
+def _normalize_city_for_weather(city: str) -> str:
+    """将区县名规范化为城市名（和风天气只支持到城市级别）"""
+    # 移除区、县等后缀
+    for suffix in ["区", "县", "旗", "市"]:
+        if city.endswith(suffix) and len(city) > 2:
+            city = city[:-1]
+            break
+    return city
+
+
+def _get_cached_weather(city: str) -> tuple:
+    """获取缓存的天气数据"""
+    if city in _weather_cache:
+        cached_time, cached_weather = _weather_cache[city]
+        if datetime.now() - cached_time < timedelta(minutes=5):
+            return cached_weather
     return None
 
 
-async def get_weather_openweathermap(city: str) -> str:
-    """使用 OpenWeatherMap 获取天气（支持县级城市）"""
-    try:
-        params = {
-            "q": f"{city},CN",  # 优先搜索中国
-            "appid": OWM_API_KEY,
-            "lang": "zh_cn",
-            "units": "metric"  # 使用摄氏度
-        }
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(OWM_API_URL, params=params)
-            if response.status_code == 200:
-                data = response.json()
-                weather = data.get("weather", [{}])[0].get("description", "")
-                temp = data["main"]["temp"]
-                feels_like = data["main"]["feels_like"]
-                humidity = data["main"]["humidity"]
-                wind_speed = data["wind"]["speed"]
-                city_name = data.get("name", city)
-                
-                # 天气描述首字母大写转小写
-                weather_cn = weather.lower()
-                
-                return f"{city_name}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind_speed}m/s"
-            elif response.status_code == 404:
-                # 城市不存在，尝试只搜索城市名（不加中国）
-                params["q"] = city
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    response = await client.get(OWM_API_URL, params=params)
-                    if response.status_code == 200:
-                        data = response.json()
-                        weather = data.get("weather", [{}])[0].get("description", "")
-                        temp = data["main"]["temp"]
-                        feels_like = data["main"]["feels_like"]
-                        humidity = data["main"]["humidity"]
-                        wind_speed = data["wind"]["speed"]
-                        city_name = data.get("name", city)
-                        weather_cn = weather.lower()
-                        return f"{city_name}天气：{weather_cn}，温度：{temp}°C（体感{feels_like}°C），湿度：{humidity}%，风速：{wind_speed}m/s"
-    except Exception as e:
-        print(f"OpenWeatherMap错误: {e}")
+def _set_cached_weather(city: str, weather: str):
+    """设置天气缓存"""
+    _weather_cache[city] = (datetime.now(), weather)
+
+
+async def get_weather(city: str = "北京") -> str:
+    """获取天气信息（支持县级城市）"""
+    # 检查缓存
+    cached = _get_cached_weather(city)
+    if cached:
+        return cached
+    
+    # 使用 wttr.in
+    weather = await get_weather_wttr(city)
+    if weather:
+        _set_cached_weather(city, weather)
+        return weather
+    
     return None
 
 
