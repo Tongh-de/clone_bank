@@ -38,6 +38,7 @@ from controllers.transfer_controller import router as transfer_router
 from controllers.report_controller import router as report_router
 from controllers.ai_controller import router as ai_router
 from controllers.email_controller import router as email_router
+from services.map_service import router as map_router
 
 app.include_router(auth_router)
 app.include_router(account_router)
@@ -45,6 +46,7 @@ app.include_router(transfer_router)
 app.include_router(report_router)
 app.include_router(ai_router)
 app.include_router(email_router)
+app.include_router(map_router)
 
 
 # ============ 页面路由 ============
@@ -124,6 +126,19 @@ async def email_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("email.html", {"request": request, "user": user})
 
 
+@app.get("/map", response_class=HTMLResponse)
+async def map_page(request: Request, db: Session = Depends(get_db)):
+    """网点地图页"""
+    user = await get_current_user(request, db)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    return templates.TemplateResponse("map.html", {
+        "request": request, 
+        "user": user,
+        "amap_key": config.AMAP_WEB_KEY
+    })
+
+
 # ============ 初始化管理员 ============
 
 def init_admin():
@@ -159,9 +174,9 @@ if __name__ == "__main__":
     
     app_logger.info(f"银行 {config.BANK_NAME} 账户管理系统")
     app_logger.info("=" * 50)
-    app_logger.info(f"访问地址: http://localhost:8000")
-    app_logger.info(f"API文档: http://localhost:8000/docs")
+    app_logger.info(f"访问地址: http://localhost:8080")
+    app_logger.info(f"API文档: http://localhost:8080/docs")
     app_logger.info(f"默认账号: admin / admin123")
     app_logger.info("=" * 50)
     
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8080)

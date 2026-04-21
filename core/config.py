@@ -32,3 +32,7 @@ EMAIL_PORT = 25
 
 # Ollama AI配置
 OLLAMA_MODEL = "qwen:0.5b"
+
+# 高德地图配置
+AMAP_WEB_KEY = "ca7a8b8dd6c21ae7226306dc7488193d"  # 前端使用
+AMAP_SERVER_KEY = "750b030020ccffe9e66e365563c1abbd"  # 后端使用
