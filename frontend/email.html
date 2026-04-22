@@ -19,19 +19,19 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label required">邮件用途</label>
-                        <select class="form-select" id="emailPurpose" required>
-                            <option value="">请选择邮件类型</option>
-                            <option value="账户余额通知">账户余额通知</option>
-                            <option value="理财产品推荐">理财产品推荐</option>
-                            <option value="风险评估提醒">风险评估提醒</option>
-                            <option value="交易明细通知">交易明细通知</option>
-                            <option value="信用卡账单提醒">信用卡账单提醒</option>
-                            <option value="贷款审批通知">贷款审批通知</option>
-                            <option value="定期存款到期提醒">定期存款到期提醒</option>
-                            <option value="利率调整通知">利率调整通知</option>
-                            <option value="安全提醒">安全提醒</option>
-                            <option value="节日问候">节日问候</option>
-                        </select>
+                        <input type="text" class="form-control" id="emailPurpose" list="purposeList" required placeholder="请选择或输入邮件类型">
+                        <datalist id="purposeList">
+                            <option value="账户余额通知">
+                            <option value="理财产品推荐">
+                            <option value="风险评估提醒">
+                            <option value="交易明细通知">
+                            <option value="信用卡账单提醒">
+                            <option value="贷款审批通知">
+                            <option value="定期存款到期提醒">
+                            <option value="利率调整通知">
+                            <option value="安全提醒">
+                            <option value="节日问候">
+                        </datalist>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">客户姓名</label>
