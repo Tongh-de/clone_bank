@@ -587,3 +587,5 @@
 2026-04-21 21:57:01 - bank_app - INFO - API文档: http://localhost:8080/docs
 2026-04-21 21:57:01 - bank_app - INFO - 默认账号: admin / admin123
 2026-04-21 21:57:01 - bank_app - INFO - ==================================================
+2026-04-21 21:57:30 - bank_user - INFO - [admin] 登录成功 [IP: 127.0.0.1] - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb
+2026-04-21 21:57:30 - bank_app - INFO - 用户登录: admin from 127.0.0.1
