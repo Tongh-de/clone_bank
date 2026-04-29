@@ -22,7 +22,7 @@ PAGE_SIZE = 20
 REPORT_DIR = "reports"
 
 # 通义千问API配置
-DASHSCOPE_API_KEY = "sk-3e4efec26397455fa5f4dbd7e25e3c83"
+DASHSCOPE_API_KEY = "sk-62c0f5ff0ebc4f93aca0f640db2f5287"
 
 # 邮件配置
 EMAIL_HOST = "smtp.163.com"

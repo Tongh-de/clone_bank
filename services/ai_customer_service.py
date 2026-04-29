@@ -305,8 +305,20 @@ async def chat_with_qwen(messages: list) -> str:
         "temperature": 0.7
     }
     
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(DASHSCOPE_API_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(DASHSCOPE_API_URL, headers=headers, json=payload)
+            response.raise_for_status()
+            result = response.json()
+            return result["choices"][0]["message"]["content"]
+    except httpx.HTTPStatusError as e:
+        error_detail = f"API HTTP错误: {e.response.status_code} - {e.response.text[:200]}"
+        raise Exception(error_detail)
+    except httpx.ConnectError as e:
+        raise Exception(f"网络连接失败，请检查网络: {e}")
+    except httpx.TimeoutException:
+        raise Exception("API请求超时，请稍后再试")
+    except KeyError as e:
+        raise Exception(f"API响应格式错误: {e}")
+    except Exception as e:
+        raise Exception(f"AI服务错误: {type(e).__name__} - {str(e)}")
